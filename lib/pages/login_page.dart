@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_asset_wallet/components/button.dart';
+import 'package:flutter_asset_wallet/components/square_box.dart';
 import 'package:flutter_asset_wallet/components/textfield.dart';
 
 class LoginPage extends StatelessWidget {
@@ -19,17 +20,18 @@ class LoginPage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(
-                height: 50,
+                height: 10,
               ),
               // entrance logo
               Icon(
                 Icons.lock,
-                size: 80,
+                size: 70,
               ),
               const SizedBox(
-                height: 50,
+                height: 40,
               ),
               // welcome
               Text(
@@ -127,21 +129,49 @@ class LoginPage extends StatelessWidget {
                     ),
                   ],
                 ),
-              )
+              ),
 
+              const SizedBox(
+                height: 30,
+              ),
               // google
-              ,
+
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  // google
+
+                  SquareBox(imagePath: 'lib/images/google_logo.png'),
+
+                  const SizedBox(width: 35),
+
+                  // apple
+
+                  SquareBox(imagePath: 'lib/images/apple_logo.png'),
+                ],
+              ),
+
+              const SizedBox(
+                height: 50,
+              ),
+
+              // register button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'lib/images/google_logo.png',
-                    height: 72,
+                  Text('No account?'),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                  const Text(
+                    'Register',
+                    style: TextStyle(
+                      color: Colors.amberAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               )
-              // apple
-
-              // register button
             ],
           ),
         ),
