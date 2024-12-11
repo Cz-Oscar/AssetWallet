@@ -3,28 +3,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_asset_wallet/pages/home_page.dart';
 import 'package:flutter_asset_wallet/pages/login_or_register_page.dart';
 
-class AuthPage extends StatelessWidget {
-  const AuthPage({super.key});
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          //user logged in
+    return MaterialApp(
+      home: AuthStateHandler(),
+    );
+  }
+}
 
-          if (snapshot.hasData) {
-            return HomePage();
-          }
-
-          // user not logged in
-
-          else {
-            return LoginOrRegisterPage();
-          }
-        },
-      ),
+class AuthStateHandler extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading spinner while checking authentication state
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          // If user is logged in, show HomePage
+          return HomePage();
+        } else {
+          // If user is not logged in, show LoginOrRegisterPage
+          return const LoginOrRegisterPage();
+        }
+      },
     );
   }
 }

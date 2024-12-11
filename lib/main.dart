@@ -1,14 +1,12 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Dodaj Firebase Core
-import 'package:flutter_asset_wallet/pages/auth_page.dart';
-import 'firebase_options.dart'; // Import konfiguracji Firebase (wygenerowane przez flutterfire configure)
+import 'package:flutter_asset_wallet/pages/home_page.dart';
+import 'package:flutter_asset_wallet/pages/login_or_register_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Umożliwia inicjalizację asynchroniczną
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  ); // Inicjalizacja Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Inicjalizacja Firebase
   runApp(const MyApp());
 }
 
@@ -17,9 +15,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: AuthPage(),
+      home: AuthStateHandler(),
+    );
+  }
+}
+
+class AuthStateHandler extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          return HomePage();
+        } else {
+          return const LoginOrRegisterPage();
+        }
+      },
     );
   }
 }

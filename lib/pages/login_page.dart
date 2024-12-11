@@ -3,6 +3,7 @@ import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
 import 'package:flutter_asset_wallet/components/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_asset_wallet/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   final Function()? onTap;
@@ -184,10 +185,14 @@ class _LoginPageState extends State<LoginPage> {
                 // Google and Apple buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    SquareBox(imagePath: 'lib/images/google_logo.png'),
+                  children: [
+                    SquareBox(
+                        onTap: () => AuthService().signInWithGoogle(),
+                        imagePath: 'lib/images/google_logo.png'),
                     SizedBox(width: 35),
-                    SquareBox(imagePath: 'lib/images/apple_logo.png'),
+                    SquareBox(
+                        onTap: () => AuthService().signInWithGoogle(),
+                        imagePath: 'lib/images/apple_logo.png'),
                   ],
                 ),
                 const SizedBox(
