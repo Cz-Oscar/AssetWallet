@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
 import 'package:flutter_asset_wallet/components/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginPage extends StatefulWidget {
+class RegisterPage extends StatefulWidget {
   final Function()? onTap;
-  LoginPage({super.key, required this.onTap});
+  RegisterPage({super.key, required this.onTap});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _RegisterPageState extends State<RegisterPage> {
   // Text editing controllers for email and password fields
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   // Sign in method
-  void signUserIn() async {
+  void signUserUp() async {
     final email = usernameController.text.trim();
     final password = passwordController.text.trim();
 
@@ -33,10 +35,18 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
 
-    // try login
+    // try create user
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Attempt sign in
+
+      //check if password are equal
+      if (passwordController.text != confirmPasswordController.text) {
+        if (mounted) Navigator.pop(context);
+        showErrorMessage('Passwords not equal');
+        return;
+      }
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -90,11 +100,11 @@ class _LoginPageState extends State<LoginPage> {
                   size: 70,
                 ),
                 const SizedBox(
-                  height: 40,
+                  height: 20,
                 ),
-                // Welcome message
+                // Register message
                 const Text(
-                  'Welcome back!',
+                  'Create account!',
                   style: TextStyle(
                     color: Colors.black,
                     fontSize: 18,
@@ -124,30 +134,24 @@ class _LoginPageState extends State<LoginPage> {
                   height: 10,
                 ),
 
-                // Forgot password button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 81, 27, 27),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
+                // Confirm Password field
+                MyTextField(
+                  controller: confirmPasswordController,
+                  hintText: 'Confirm Password',
+                  obscureText: true,
                 ),
                 const SizedBox(
-                  height: 25,
+                  height: 10,
                 ),
 
-                // Sign in button
+                const SizedBox(
+                  height: 5,
+                ),
+
+                // Sign up button
                 MyButton(
-                  text: "Sign in",
-                  onTap: signUserIn,
+                  text: "Sign up",
+                  onTap: signUserUp,
                 ),
                 const SizedBox(
                   height: 50,
@@ -191,19 +195,19 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
                 const SizedBox(
-                  height: 50,
+                  height: 40,
                 ),
 
                 // Register button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('No account?'),
+                    const Text('Have account?'),
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: widget.onTap,
                       child: const Text(
-                        'Register',
+                        'Log in',
                         style: TextStyle(
                           color: Colors.amberAccent,
                           fontWeight: FontWeight.bold,

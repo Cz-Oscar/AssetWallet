@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Dodaj Firebase Core
+import 'package:flutter_asset_wallet/pages/auth_page.dart';
 import 'firebase_options.dart'; // Import konfiguracji Firebase (wygenerowane przez flutterfire configure)
-import 'pages/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding
@@ -17,9 +17,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: AuthPage(),
     );
   }
 }
