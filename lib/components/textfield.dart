@@ -25,12 +25,14 @@ class MyTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               // when user click textfield textfield has different color
-              borderSide: BorderSide(color: Colors.grey.shade200),
+              borderSide: BorderSide(
+                color: Colors.deepOrange.shade300,
+              ),
             ),
-            fillColor: Colors.grey.shade500,
+            fillColor: Colors.white,
             filled: true,
             hintText: hintText,
-            hintStyle: TextStyle(color: Colors.grey[50])),
+            hintStyle: TextStyle(color: Colors.black)),
       ),
     );
   }

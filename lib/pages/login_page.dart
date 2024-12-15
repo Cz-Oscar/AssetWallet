@@ -134,8 +134,9 @@ class _LoginPageState extends State<LoginPage> {
                       const Text(
                         'Forgot password?',
                         style: TextStyle(
-                          color: Color.fromARGB(255, 81, 27, 27),
+                          color: Colors.white,
                           fontSize: 15,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -210,7 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         'Register',
                         style: TextStyle(
-                          color: Colors.amberAccent,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

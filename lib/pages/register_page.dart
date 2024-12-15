@@ -214,8 +214,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: const Text(
                         'Log in',
                         style: TextStyle(
-                          color: Colors.amberAccent,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
