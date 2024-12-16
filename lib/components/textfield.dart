@@ -24,11 +24,12 @@ class MyTextField extends StatelessWidget {
               borderSide: BorderSide(color: Colors.black87),
             ),
             focusedBorder: OutlineInputBorder(
-              // when user click textfield textfield has different color
-              borderSide: BorderSide(
-                color: Colors.deepOrange.shade300,
-              ),
-            ),
+                // when user click textfield textfield has different color
+                borderSide: BorderSide(
+                  color: Colors.deepOrange.shade300,
+                  width: 3,
+                ),
+                borderRadius: BorderRadius.circular(10)),
             fillColor: Colors.white,
             filled: true,
             hintText: hintText,
