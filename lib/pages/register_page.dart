@@ -20,6 +20,25 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
+  // Stałe dla odstępów
+  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
+  final double iconSize = 70.0; // Rozmiar ikonki kłódki
+  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
+  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+
+  // bold white style for Log in
+  final TextStyle boldTextStyle = TextStyle(
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: FontWeight.bold,
+  );
+
+  // black style for rest
+  final TextStyle blackTextStyle = TextStyle(
+    color: Colors.black,
+    fontSize: 15,
+  );
+
   // Sign in method
   void signUserUp() async {
     final email = usernameController.text.trim();
@@ -92,17 +111,9 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
-                  height: 10,
-                ),
-                // Entrance logo
-                const Icon(
-                  Icons.lock,
-                  size: 70,
-                ),
-                const SizedBox(
-                  height: 20,
-                ),
+                SizedBox(height: iconTopPadding), // Odstęp na górze
+                Icon(Icons.lock, size: iconSize), // Ikona
+                SizedBox(height: titlePadding), // Odstęp pod ikoną
                 // Register message
                 const Text(
                   'Create account!',
@@ -111,8 +122,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     fontSize: 18,
                   ),
                 ),
-                const SizedBox(
-                  height: 50,
+                SizedBox(
+                  height: formStartPadding,
                 ),
 
                 // Username or email field
@@ -169,9 +180,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           color: Colors.black54,
                         ),
                       ),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text(' Or continue with '),
+                        child: Text(
+                          ' Or continue with ',
+                          style: blackTextStyle,
+                        ),
                       ),
                       const Expanded(
                         child: Divider(
@@ -207,16 +221,16 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Have account?'),
+                    Text(
+                      'Have account?',
+                      style: blackTextStyle,
+                    ),
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: widget.onTap,
-                      child: const Text(
+                      child: Text(
                         'Log in',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: boldTextStyle,
                       ),
                     ),
                   ],

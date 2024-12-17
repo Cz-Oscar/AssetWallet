@@ -1,4 +1,10 @@
 textfield.dart - pole tekstowe --- klasa MyTextField
 
 
-13:36, 29.11
+zeby dodac loga obok nazw trzeba skorzystac z coingecko albo coinmarketcap API i wtedy moglyby sie wyswietlac
+
+to samo z lista giełd 
+
+
+
+

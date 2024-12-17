@@ -3,6 +3,7 @@ import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
 import 'package:flutter_asset_wallet/components/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_asset_wallet/pages/forgot_password_page.dart';
 import 'package:flutter_asset_wallet/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,6 +18,25 @@ class _LoginPageState extends State<LoginPage> {
   // Text editing controllers for email and password fields
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+
+  // Stałe dla odstępów
+  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
+  final double iconSize = 70.0; // Rozmiar ikonki kłódki
+  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
+  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+
+  // bold white style for register and forgot password?
+  final TextStyle boldTextStyle = TextStyle(
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: FontWeight.bold,
+  );
+
+  // black style for rest
+  final TextStyle blackTextStyle = TextStyle(
+    color: Colors.black,
+    fontSize: 15,
+  );
 
   // Sign in method
   void signUserIn() async {
@@ -82,17 +102,10 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(
-                  height: 10,
-                ),
-                // Entrance logo
-                const Icon(
-                  Icons.lock,
-                  size: 70,
-                ),
-                const SizedBox(
-                  height: 40,
-                ),
+                SizedBox(height: iconTopPadding), // odstep na gorze
+                Icon(Icons.lock, size: iconSize), // Ikona
+                // SizedBox(height: iconSize), // ikona
+                SizedBox(height: titlePadding), // odstep pod ikona
                 // Welcome message
                 const Text(
                   'Welcome back!',
@@ -101,8 +114,8 @@ class _LoginPageState extends State<LoginPage> {
                     fontSize: 18,
                   ),
                 ),
-                const SizedBox(
-                  height: 50,
+                SizedBox(
+                  height: formStartPadding, // odstep od pol tekstowych
                 ),
 
                 // Username or email field
@@ -131,12 +144,20 @@ class _LoginPageState extends State<LoginPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return ForgotPasswordPage();
+                              },
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Forgot password?',
+                          style: boldTextStyle,
                         ),
                       ),
                     ],
@@ -166,9 +187,12 @@ class _LoginPageState extends State<LoginPage> {
                           color: Colors.black54,
                         ),
                       ),
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(horizontal: 10.0),
-                        child: Text(' Or continue with '),
+                        child: Text(
+                          ' Or continue with ',
+                          style: blackTextStyle,
+                        ),
                       ),
                       const Expanded(
                         child: Divider(
@@ -204,16 +228,16 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('No account?'),
+                    Text(
+                      'No account?',
+                      style: blackTextStyle,
+                    ),
                     const SizedBox(width: 6),
                     GestureDetector(
                       onTap: widget.onTap,
-                      child: const Text(
+                      child: Text(
                         'Register',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: boldTextStyle,
                       ),
                     ),
                   ],
