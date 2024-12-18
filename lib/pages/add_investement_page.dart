@@ -21,6 +21,9 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       TextEditingController(); //price
   final TextEditingController _cryptoController = TextEditingController();
   final TextEditingController _exchangeController = TextEditingController();
+  String? _selectedCryptoImage; // URL wybranej kryptowaluty
+  String? _selectedExchangeImage; // URL wybranej giełdy
+
   final FocusNode _cryptoFocusNode = FocusNode();
   final FocusNode _exchangeFocusNode = FocusNode();
   bool _cryptoFieldActive = false;
@@ -49,7 +52,9 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   Future<void> _fetchCryptos() async {
     try {
       final assets = await ApiService().getAssetsWithLogos();
-      assets.forEach((asset) => ());
+      // assets.forEach((asset) {
+      //   print('Fetched asset: ${asset['name']} - Image: ${asset['image']}');
+      // });
       setState(() {
         _allAssets = assets;
         _isLoading = false;
@@ -63,13 +68,14 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   }
 
   Future<void> _addInvestmentToFirestore() async {
+    // Usuń fokus ze wszystkich pól wejściowych
     FocusScope.of(context).unfocus();
 
     if (_selectedAsset == null ||
         _selectedExchange == null ||
         _priceController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Wypełnij wszystkie pola!")),
+        const SnackBar(content: Text("Wypełnij wszystkie pola!")),
       );
       return;
     }
@@ -77,16 +83,16 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Nie jesteś zalogowany!")),
+        const SnackBar(content: Text("Nie jesteś zalogowany!")),
       );
       return;
     }
 
     try {
       await FirebaseFirestore.instance
-          .collection('users') // Kolekcja użytkowników
-          .doc(user.uid) // Dokument użytkownika (po UID)
-          .collection('investments') // Podkolekcja inwestycji
+          .collection('users')
+          .doc(user.uid)
+          .collection('investments')
           .add({
         'asset': _selectedAsset,
         'exchange': _selectedExchange,
@@ -95,12 +101,15 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Inwestycja dodana pomyślnie!")),
+        const SnackBar(content: Text("Inwestycja dodana pomyślnie!")),
       );
 
       setState(() {
+        // Wyczyść pola i zresetuj zmienne
         _selectedAsset = null;
         _selectedExchange = null;
+        _selectedCryptoImage = null; // Wyczyść ikonę kryptowaluty
+        _selectedExchangeImage = null; // Wyczyść ikonę giełdy
         _priceController.clear();
         _cryptoController.clear();
         _exchangeController.clear();
@@ -122,7 +131,6 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              // Dodaj przewijanie
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Column(
@@ -131,11 +139,11 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     Text('Wybierz kryptowalutę:',
                         style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
-                    _buildCryptoTypeAheadField(),
+                    _buildCryptoSearchField(),
                     SizedBox(height: 20),
                     Text('Wybierz giełdę:', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
-                    _buildExchangeTypeAheadField(),
+                    _buildExchangeSearchField(),
                     SizedBox(height: 20),
                     Text('Podaj cenę zakupu:', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
@@ -156,54 +164,118 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   }
 
   /// Pole TypeAhead dla kryptowalut
-  Widget _buildCryptoTypeAheadField() {
-    return TypeAheadField<Map<String, dynamic>>(
+  Widget _buildCryptoSearchField() {
+    return TextField(
       controller: _cryptoController,
-      focusNode: _cryptoFocusNode,
-      hideOnEmpty: true,
-      suggestionsCallback: (pattern) {
-        return _allAssets.where((crypto) {
-          final name = crypto['name']?.toLowerCase() ?? '';
-          final symbol = crypto['symbol']?.toLowerCase() ?? '';
-          return name.contains(pattern.toLowerCase()) ||
-              symbol.contains(pattern.toLowerCase());
-        }).toList();
-      },
-      itemBuilder: (context, suggestion) {
-        return ListTile(
-          leading: suggestion['image'] != null
-              ? Image.network(suggestion['image'], width: 30, height: 30)
-              : Icon(Icons.image_not_supported),
-          title: Text(suggestion['symbol']?.toUpperCase() ?? ''),
-          subtitle: Text(suggestion['name'] ?? ''),
+      decoration: InputDecoration(
+        labelText: 'Wybierz kryptowalutę',
+        border: OutlineInputBorder(),
+        prefixIcon: _selectedCryptoImage != null
+            ? Padding(
+                padding: const EdgeInsets.all(6.0),
+                child: Image.network(
+                  _selectedCryptoImage!,
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.image_not_supported),
+                ),
+              )
+            : Icon(Icons.currency_bitcoin),
+        suffixIcon: Icon(Icons.search),
+      ),
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 16,
+              ),
+              child: _buildCryptoSelectionModal(),
+            );
+          },
         );
       },
-      onSelected: (suggestion) {
-        setState(() {
-          _selectedAsset = suggestion['name'];
-          _cryptoController.text = suggestion['symbol']?.toUpperCase() ?? '';
-        });
-      },
-      builder: (context, controller, focusNode) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          readOnly: _cryptoFocusNode.hasFocus ? false : true,
-          decoration: InputDecoration(
-            labelText: 'Wybierz kryptowalutę',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.search),
-            suffixIcon: _cryptoController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: () {
-                      setState(() {
-                        _cryptoController.clear();
-                        _selectedAsset = null;
+      readOnly: true,
+    );
+  }
+
+  Widget _buildCryptoSelectionModal() {
+    List<Map<String, dynamic>> filteredAssets = List.from(_allAssets);
+
+    return StatefulBuilder(
+      builder: (context, modalSetState) {
+        return SafeArea(
+          child: FractionallySizedBox(
+            heightFactor: 0.8, // Modal zajmuje 80% wysokości ekranu
+            child: Column(
+              children: [
+                // Pasek wyszukiwania
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Szukaj kryptowaluty',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    autofocus: true,
+                    onChanged: (query) {
+                      modalSetState(() {
+                        filteredAssets = _allAssets.where((crypto) {
+                          final name = crypto['name']?.toLowerCase() ?? '';
+                          final symbol = crypto['symbol']?.toLowerCase() ?? '';
+                          return name.contains(query.toLowerCase()) ||
+                              symbol.contains(query.toLowerCase());
+                        }).toList();
                       });
                     },
-                  )
-                : null,
+                  ),
+                ),
+                // Lista wyników kryptowalut
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: filteredAssets.isEmpty
+                        ? Center(child: Text('Brak wyników.'))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: filteredAssets.length,
+                            itemBuilder: (context, index) {
+                              final crypto = filteredAssets[index];
+                              return ListTile(
+                                leading: crypto['image'] != null
+                                    ? Image.network(
+                                        crypto['image'],
+                                        width: 30,
+                                        height: 30,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Icon(Icons.image_not_supported),
+                                      )
+                                    : Icon(Icons.image_not_supported),
+                                title:
+                                    Text(crypto['symbol']?.toUpperCase() ?? ''),
+                                subtitle: Text(crypto['name'] ?? ''),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedAsset = crypto['name'];
+                                    _cryptoController.text =
+                                        crypto['symbol']?.toUpperCase() ?? '';
+                                    _selectedCryptoImage = crypto['image'];
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -211,51 +283,114 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   }
 
   /// Pole TypeAhead dla giełd
-  Widget _buildExchangeTypeAheadField() {
-    return TypeAheadField<Map<String, dynamic>>(
+  Widget _buildExchangeSearchField() {
+    return TextField(
       controller: _exchangeController,
-      focusNode: _exchangeFocusNode,
-      hideOnEmpty: true,
-      suggestionsCallback: (pattern) {
-        return _allExchanges.where((exchange) {
-          final name = exchange['name']?.toLowerCase() ?? '';
-          return name.contains(pattern.toLowerCase());
-        }).toList();
-      },
-      itemBuilder: (context, suggestion) {
-        return ListTile(
-          leading: suggestion['image'] != null
-              ? Image.network(suggestion['image'], width: 30, height: 30)
-              : Icon(Icons.image_not_supported),
-          title: Text(suggestion['name'] ?? ''),
+      decoration: InputDecoration(
+        labelText: 'Wybierz giełdę',
+        border: OutlineInputBorder(),
+        prefixIcon: _selectedExchangeImage != null
+            ? Padding(
+                padding: const EdgeInsets.all(6.0),
+                child: Image.network(
+                  _selectedExchangeImage!,
+                  width: 24,
+                  height: 24,
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(Icons.image_not_supported),
+                ),
+              )
+            : Icon(Icons.storefront),
+        suffixIcon: Icon(Icons.search),
+      ),
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          builder: (context) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 16,
+              ),
+              child: _buildExchangeSelectionModal(),
+            );
+          },
         );
       },
-      onSelected: (suggestion) {
-        setState(() {
-          _selectedExchange = suggestion['name'];
-          _exchangeController.text = suggestion['name'] ?? '';
-        });
-      },
-      builder: (context, controller, focusNode) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          readOnly: _exchangeFocusNode.hasFocus ? false : true,
-          decoration: InputDecoration(
-            labelText: 'Wybierz giełdę',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.search),
-            suffixIcon: _exchangeController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear),
-                    onPressed: () {
-                      setState(() {
-                        _exchangeController.clear();
-                        _selectedExchange = null;
+      readOnly: true,
+    );
+  }
+
+  Widget _buildExchangeSelectionModal() {
+    List<Map<String, dynamic>> filteredExchanges = List.from(_allExchanges);
+
+    return StatefulBuilder(
+      builder: (context, modalSetState) {
+        return SafeArea(
+          child: FractionallySizedBox(
+            heightFactor: 0.8, // Modal zajmuje 80% wysokości ekranu
+            child: Column(
+              children: [
+                // Pasek wyszukiwania
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Szukaj giełdy',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    autofocus: true,
+                    onChanged: (query) {
+                      modalSetState(() {
+                        filteredExchanges = _allExchanges.where((exchange) {
+                          final name = exchange['name']?.toLowerCase() ?? '';
+                          return name.contains(query.toLowerCase());
+                        }).toList();
                       });
                     },
-                  )
-                : null,
+                  ),
+                ),
+                // Lista wyników giełd
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: filteredExchanges.isEmpty
+                        ? Center(child: Text('Brak wyników.'))
+                        : ListView.builder(
+                            physics: BouncingScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: filteredExchanges.length,
+                            itemBuilder: (context, index) {
+                              final exchange = filteredExchanges[index];
+                              return ListTile(
+                                leading: exchange['image'] != null
+                                    ? Image.network(
+                                        exchange['image'],
+                                        width: 30,
+                                        height: 30,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Icon(Icons.image_not_supported),
+                                      )
+                                    : Icon(Icons.image_not_supported),
+                                title: Text(exchange['name'] ?? ''),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedExchange = exchange['name'];
+                                    _exchangeController.text =
+                                        exchange['name'] ?? '';
+                                    _selectedExchangeImage = exchange['image'];
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
