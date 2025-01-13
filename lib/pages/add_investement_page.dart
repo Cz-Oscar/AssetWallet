@@ -17,17 +17,14 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
 
   String? _selectedAsset;
   String? _selectedExchange;
-  final TextEditingController _priceController =
-      TextEditingController(); //price
+  String? _selectedCryptoImage;
+  String? _selectedExchangeImage;
+  DateTime? _selectedDate; // date variable
+
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
   final TextEditingController _cryptoController = TextEditingController();
   final TextEditingController _exchangeController = TextEditingController();
-  String? _selectedCryptoImage; // URL wybranej kryptowaluty
-  String? _selectedExchangeImage; // URL wybranej giełdy
-
-  final FocusNode _cryptoFocusNode = FocusNode();
-  final FocusNode _exchangeFocusNode = FocusNode();
-  bool _cryptoFieldActive = false;
-  bool _exchangeFieldActive = false;
 
   bool _isLoading = true;
 
@@ -52,9 +49,6 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   Future<void> _fetchCryptos() async {
     try {
       final assets = await ApiService().getAssetsWithLogos();
-      // assets.forEach((asset) {
-      //   print('Fetched asset: ${asset['name']} - Image: ${asset['image']}');
-      // });
       setState(() {
         _allAssets = assets;
         _isLoading = false;
@@ -67,13 +61,33 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     }
   }
 
+  Future<String?> _fetchCryptoId(String symbol) async {
+    try {
+      final assets = await ApiService().getAssetsWithLogos();
+      final match = assets.firstWhere(
+        (asset) =>
+            asset['symbol'].toString().toLowerCase() == symbol.toLowerCase(),
+        orElse: () => {}, // Zwraca pustą mapę zamiast null
+      );
+
+      return match.isNotEmpty
+          ? match['id']?.toString()
+          : null; // Sprawdza, czy mapa nie jest pusta
+    } catch (e) {
+      print("Błąd podczas pobierania ID kryptowaluty: $e");
+      return null;
+    }
+  }
+
   Future<void> _addInvestmentToFirestore() async {
-    // Usuń fokus ze wszystkich pól wejściowych
     FocusScope.of(context).unfocus();
 
     if (_selectedAsset == null ||
+        _cryptoController.text.isEmpty ||
         _selectedExchange == null ||
-        _priceController.text.isEmpty) {
+        _priceController.text.isEmpty ||
+        _amountController.text.isEmpty ||
+        _selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Wypełnij wszystkie pola!")),
       );
@@ -88,6 +102,40 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       return;
     }
 
+    // Pobranie ID kryptowaluty na podstawie symbolu
+    final String symbol = _cryptoController.text.toLowerCase();
+    print("Zawartość _allAssets: ${_allAssets.take(10)}");
+
+    final selectedCrypto = _allAssets.firstWhere(
+      (crypto) => crypto['symbol']?.toLowerCase() == symbol,
+      orElse: () => {}, // Zwraca pustą mapę, jeśli brak dopasowania
+    );
+
+    if (selectedCrypto.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text("Nie znaleziono ID dla symbolu ${_cryptoController.text}"),
+        ),
+      );
+      return;
+    }
+
+    final cryptoId = selectedCrypto['id'] ?? 'unknown';
+
+    // Logowanie dla debugowania
+    print("Symbol: $symbol, ID: $cryptoId");
+    print({
+      'asset': _selectedAsset,
+      'symbol': _cryptoController.text,
+      'id': cryptoId, // Powinno być prawidłowe ID
+      'exchange': _selectedExchange,
+      'price': double.tryParse(_priceController.text) ?? 0.0,
+      'amount': double.tryParse(_amountController.text) ?? 0.0,
+      'date': Timestamp.fromDate(_selectedDate!),
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
     try {
       await FirebaseFirestore.instance
           .collection('users')
@@ -95,8 +143,12 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           .collection('investments')
           .add({
         'asset': _selectedAsset,
+        'symbol': _cryptoController.text,
+        'id': cryptoId, // Zapisujemy ID
         'exchange': _selectedExchange,
         'price': double.tryParse(_priceController.text) ?? 0.0,
+        'amount': double.tryParse(_amountController.text) ?? 0.0,
+        'date': Timestamp.fromDate(_selectedDate!),
         'timestamp': FieldValue.serverTimestamp(),
       });
 
@@ -105,14 +157,12 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       );
 
       setState(() {
-        // Wyczyść pola i zresetuj zmienne
         _selectedAsset = null;
         _selectedExchange = null;
-        _selectedCryptoImage = null; // Wyczyść ikonę kryptowaluty
-        _selectedExchangeImage = null; // Wyczyść ikonę giełdy
         _priceController.clear();
+        _amountController.clear();
         _cryptoController.clear();
-        _exchangeController.clear();
+        _selectedDate = null;
       });
     } catch (e) {
       print("Błąd zapisu do Firestore: $e");
@@ -145,21 +195,52 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     SizedBox(height: 5),
                     _buildExchangeSearchField(),
                     SizedBox(height: 20),
+                    Text('Podaj ilość:',
+                        style: TextStyle(fontSize: 16)), // Zamieniono kolejność
+                    SizedBox(height: 5),
+                    _buildAmountField(),
+                    SizedBox(height: 20),
                     Text('Podaj cenę zakupu:', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
                     _buildPriceFieldWithToolbar(),
                     SizedBox(height: 20),
+                    // Text('Wybierz date inwestycji: ',
+                    //     style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 5),
+                    _buildDatePickerField(),
+                    SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: () {
-                        FocusScope.of(context).unfocus(); // Zamknij klawiaturę
-                        _addInvestmentToFirestore();
-                      },
+                      onPressed: _addInvestmentToFirestore,
                       child: Text("Dodaj inwestycję do portfela"),
                     ),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  // Widget _buildPriceField() {
+  //   return TextField(
+  //     controller: _priceController,
+  //     keyboardType: TextInputType.numberWithOptions(decimal: true),
+  //     decoration: InputDecoration(
+  //       labelText: 'Podaj cenę zakupu',
+  //       border: OutlineInputBorder(),
+  //       prefixIcon: Icon(Icons.attach_money),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildAmountField() {
+    return TextField(
+      controller: _amountController,
+      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: 'Podaj ilość',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.add_circle_outline),
+      ),
     );
   }
 
@@ -408,17 +489,54 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            labelText: "Podaj cenę: ",
+            labelText: "Podaj cenę zakupu:",
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.attach_money),
-            suffixText: 'USD',
-            suffixStyle: TextStyle(color: Colors.grey),
+            suffix: Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Text(
+                'USD',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ), // Dodano jako widget 'suffix'
           ),
         ),
-        CupertinoButton(
-          child: Text("Gotowe"),
-          onPressed: () {
-            FocusScope.of(context).unfocus(); // Schowanie klawiatury
+        // CupertinoButton(
+        //   child: Text("Gotowe"),
+        //   onPressed: () {
+        //     FocusScope.of(context).unfocus(); // Schowanie klawiatury
+        //   },
+        // ),
+      ],
+    );
+  }
+
+  Widget _buildDatePickerField() {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            _selectedDate != null
+                ? 'Wybrana data: ${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}'
+                : 'Wybierz datę inwestycji',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+        IconButton(
+          icon: Icon(Icons.calendar_today),
+          onPressed: () async {
+            DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime.now(),
+            );
+
+            if (pickedDate != null) {
+              setState(() {
+                _selectedDate = pickedDate;
+              });
+            }
           },
         ),
       ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_asset_wallet/pages/add_investement_page.dart';
+import 'package:flutter_asset_wallet/pages/charts_page.dart';
 import 'package:flutter_asset_wallet/pages/portfolio_page.dart';
 import 'package:flutter_asset_wallet/pages/settings_page.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
@@ -15,20 +16,29 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0; // Aktualny indeks wybranej zakładki
 
-  late final List<Widget> _pages;
+  double totalPortfolioValue = 0.0; // Wartość portfela wg zakupu
+  double currentPortfolioValue = 0.0; // Wartość portfela wg rynku
 
-  @override
-  void initState() {
-    super.initState();
-    _pages = [
-      AddInvestmentPage(), // Strona dodawania inwestycji
-      PortfolioPage(), // Strona portfela
-      Center(child: Text('Charts Page')), // Placeholder
-      SettingsPage(
-        loggedInUser: FirebaseAuth.instance.currentUser?.email ?? 'Guest',
-      ),
-    ];
+  void updatePortfolioValues(double totalValue, double currentValue) {
+    setState(() {
+      totalPortfolioValue = totalValue;
+      currentPortfolioValue = currentValue;
+    });
   }
+
+  List<Widget> get _pages => [
+        AddInvestmentPage(),
+        PortfolioPage(
+          onValuesCalculated: updatePortfolioValues, // Przekazanie callbacku
+        ),
+        ChartsPage(
+          totalPortfolioValue: totalPortfolioValue,
+          currentPortfolioValue: currentPortfolioValue,
+        ),
+        SettingsPage(
+          loggedInUser: FirebaseAuth.instance.currentUser?.email ?? 'Guest',
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +55,7 @@ class _HomePageState extends State<HomePage> {
             tabBackgroundColor: Colors.lightBlueAccent,
             gap: 6,
             haptic: true,
-            padding: EdgeInsets.all(18),
+            padding: const EdgeInsets.all(18),
             selectedIndex: _selectedIndex,
             onTabChange: (index) {
               setState(() {
@@ -58,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                 text: 'Home',
               ),
               GButton(
-                icon: Icons.charging_station,
+                icon: Icons.account_balance_wallet_sharp,
                 text: 'Portfolio',
               ),
               GButton(

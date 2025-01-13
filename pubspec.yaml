@@ -35,6 +35,10 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.5.1
 
+  fl_chart: ^0.70.1
+
+  provider: ^6.1.2
+
   google_sign_in: ^6.2.2
   sign_in_with_apple: ^6.1.4
   flutter_typeahead: ^5.2.0
