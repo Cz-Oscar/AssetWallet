@@ -32,9 +32,8 @@ class _HomePageState extends State<HomePage> {
           onValuesCalculated: updatePortfolioValues, // Przekazanie callbacku
         ),
         ChartsPage(
-          totalPortfolioValue: totalPortfolioValue,
-          currentPortfolioValue: currentPortfolioValue,
-        ),
+            // chartData: chartData, // Przekazanie poprawnych danych historycznych
+            ),
         SettingsPage(
           loggedInUser: FirebaseAuth.instance.currentUser?.email ?? 'Guest',
         ),

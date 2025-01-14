@@ -1,295 +1,8 @@
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:flutter_asset_wallet/services/api_service.dart';
-
-// class PortfolioPage extends StatefulWidget {
-//   final Function(double totalValue, double currentValue) onValuesCalculated;
-
-//   const PortfolioPage({Key? key, required this.onValuesCalculated})
-//       : super(key: key);
-
-//   @override
-//   State<PortfolioPage> createState() => _PortfolioPageState();
-// }
-
-// class _PortfolioPageState extends State<PortfolioPage> {
-//   double totalPortfolioValue = 0.0; // Wartość portfela wg zakupu
-//   double currentPortfolioValue = 0.0; // Wartość portfela wg rynku
-
-//   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-//   bool isLoading = false;
-//   late Map<String, String> cryptoIdMap;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _initializeCryptoIdMap();
-//   }
-
-//   Future<void> _initializeCryptoIdMap() async {
-//     try {
-//       setState(() => isLoading = true);
-
-//       cryptoIdMap = await ApiService().fetchCryptoSymbolToIdMap();
-//       cryptoIdMap =
-//           cryptoIdMap.map((key, value) => MapEntry(key.toLowerCase(), value));
-//       await _calculatePortfolioValues();
-//     } catch (e) {
-//       print('Błąd inicjalizacji mapy symboli kryptowalut: $e');
-//     } finally {
-//       setState(() => isLoading = false);
-//     }
-//   }
-
-//   Future<void> _calculatePortfolioValues() async {
-//     setState(() {
-//       isLoading = true;
-//     });
-
-//     double totalValue = 0.0;
-//     double currentValue = 0.0;
-
-//     try {
-//       // Pobierz dokumenty inwestycji z Firebase
-//       QuerySnapshot snapshot = await FirebaseFirestore.instance
-//           .collection('users')
-//           .doc(uid)
-//           .collection('investments')
-//           .get();
-
-//       // Pobierz mapę symbol → ID
-//       final symbolToIdMap = await ApiService().fetchCryptoSymbolToIdMap();
-
-//       // Przygotuj listę symboli i zamień je na ID, odfiltrowując null
-//       final ids = snapshot.docs
-//           .map((doc) => (doc.data() as Map<String, dynamic>)['symbol'])
-//           .where((symbol) => symbol != null)
-//           .map((symbol) => symbol.toString().toLowerCase())
-//           .map((symbol) => symbolToIdMap[symbol])
-//           .where((id) => id != null)
-//           .cast<String>() // Rzutowanie na List<String>
-//           .toList();
-
-//       if (ids.isEmpty) {
-//         print("Brak ID do pobrania cen.");
-//         return;
-//       }
-//       print("Wysyłanie zapytania dla ID: ${ids.join(',')}");
-
-//       // Pobierz ceny dla ID
-//       final prices = await ApiService().getCurrentPrices(ids);
-
-//       print("Ceny otrzymane z API: $prices");
-
-//       // Oblicz wartości portfela
-//       for (var doc in snapshot.docs) {
-//         final data = doc.data() as Map<String, dynamic>;
-//         double price = (data['price'] ?? 0).toDouble();
-//         double amount = (data['amount'] ?? 0).toDouble();
-//         String symbol = (data['symbol'] ?? '').toLowerCase();
-
-//         // Pobierz ID dla symbolu
-//         final id = symbolToIdMap[symbol];
-//         if (id != null && prices.containsKey(id)) {
-//           final currentPrice = prices[id];
-//           if (currentPrice != null) {
-//             currentValue += currentPrice * amount;
-//           } else {
-//             print(
-//                 "Brak danych cenowych dla ID $id (symbol: $symbol), pomijam.");
-//           }
-//         } else {
-//           print("Brak ID dla symbolu: $symbol, pomijam.");
-//         }
-//       }
-
-//       // Zaktualizuj wartości portfela
-//       setState(() {
-//         totalPortfolioValue = totalValue; // wg zakupu
-//         currentPortfolioValue = currentValue; // wg rynku
-//       });
-
-//       // Przekaż dane do HomePage
-//       widget.onValuesCalculated(totalValue, currentValue);
-//     } catch (e) {
-//       print("Błąd podczas obliczania wartości portfela: $e");
-//     } finally {
-//       setState(() {
-//         isLoading = false;
-//       });
-//     }
-//   }
-
-//   Future<void> _deleteInvestment(String id, String assetName) async {
-//     try {
-//       setState(() => isLoading = true);
-//       await FirebaseFirestore.instance
-//           .collection('users')
-//           .doc(uid)
-//           .collection('investments')
-//           .doc(id)
-//           .delete();
-
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Usunięto inwestycję: $assetName'),
-//           duration: const Duration(seconds: 2),
-//         ),
-//       );
-
-//       await _calculatePortfolioValues();
-//     } finally {
-//       setState(() => isLoading = false);
-//     }
-//   }
-
-//   String _formatDate(dynamic timestamp) {
-//     if (timestamp == null) return 'Brak daty'; // Jeśli brak daty
-//     final date =
-//         (timestamp as Timestamp).toDate(); // Konwersja Firebase Timestamp
-//     return '${date.day}-${date.month}-${date.year}';
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('Portfolio'),
-//         backgroundColor: Colors.lightBlue,
-//       ),
-//       body: isLoading
-//           ? const Center(child: CircularProgressIndicator())
-//           : Column(
-//               children: [
-//                 Padding(
-//                   padding: const EdgeInsets.all(16.0),
-//                   child: Column(
-//                     children: [
-//                       const Text(
-//                         'Wartość portfela wg zakupu:',
-//                         style: TextStyle(
-//                             fontSize: 18, fontWeight: FontWeight.w500),
-//                       ),
-//                       Text(
-//                         '\$${totalPortfolioValue.toStringAsFixed(2)}',
-//                         style: const TextStyle(
-//                           fontSize: 32,
-//                           fontWeight: FontWeight.bold,
-//                           color: Colors.green,
-//                         ),
-//                       ),
-//                       const SizedBox(height: 16),
-//                       const Text(
-//                         'Wartość portfela wg rynku:',
-//                         style: TextStyle(
-//                             fontSize: 18, fontWeight: FontWeight.w500),
-//                       ),
-//                       Text(
-//                         '\$${currentPortfolioValue.toStringAsFixed(2)}',
-//                         style: const TextStyle(
-//                           fontSize: 32,
-//                           fontWeight: FontWeight.bold,
-//                           color: Colors.blue,
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//                 const Divider(),
-//                 Expanded(
-//                   child: StreamBuilder<QuerySnapshot>(
-//                     stream: FirebaseFirestore.instance
-//                         .collection('users')
-//                         .doc(uid)
-//                         .collection('investments')
-//                         .orderBy('timestamp', descending: true)
-//                         .snapshots(),
-//                     builder: (context, snapshot) {
-//                       if (!snapshot.hasData) {
-//                         return const Center(child: CircularProgressIndicator());
-//                       }
-
-//                       final investments = snapshot.data!.docs;
-
-//                       if (investments.isEmpty) {
-//                         return const Center(
-//                           child: Text('Brak aktywów w portfelu.'),
-//                         );
-//                       }
-
-//                       return ListView.builder(
-//                         itemCount: investments.length,
-//                         itemBuilder: (context, index) {
-//                           final data =
-//                               investments[index].data() as Map<String, dynamic>;
-//                           final symbol = data['symbol'] ?? 'Brak symbolu';
-//                           final asset = data['asset'] ?? 'Brak aktywa';
-//                           final exchange = data['exchange'] ?? 'Brak giełdy';
-//                           final price = (data['price'] ?? 0.0).toDouble();
-//                           final amount = (data['amount'] ?? 0.0).toDouble();
-//                           final value = price * amount; // Wartość wg zakupu
-//                           final iconUrl = data['iconUrl'] ??
-//                               'https://via.placeholder.com/40';
-//                           final exchangeIconUrl = data['exchangeIconUrl'] ??
-//                               'https://via.placeholder.com/40';
-
-//                           return Card(
-//                             elevation: 2,
-//                             child: ListTile(
-//                               leading: Row(
-//                                 mainAxisSize: MainAxisSize.min,
-//                                 children: [
-//                                   Image.network(
-//                                     iconUrl,
-//                                     width: 30,
-//                                     height: 30,
-//                                     errorBuilder: (context, error,
-//                                             stackTrace) =>
-//                                         const Icon(Icons.image_not_supported),
-//                                   ),
-//                                   const SizedBox(width: 5),
-//                                   Image.network(
-//                                     exchangeIconUrl,
-//                                     width: 30,
-//                                     height: 30,
-//                                     errorBuilder: (context, error,
-//                                             stackTrace) =>
-//                                         const Icon(Icons.image_not_supported),
-//                                   ),
-//                                 ],
-//                               ),
-//                               title: Text(symbol.toUpperCase()),
-//                               subtitle: Text(
-//                                 'Giełda: $exchange\n'
-//                                 'Cena zakupu: \$${price.toStringAsFixed(2)}\n'
-//                                 'Ilość: ${amount.toStringAsFixed(2)}\n'
-//                                 'Wartość: \$${value.toStringAsFixed(2)}\n'
-//                                 'Data zakupu: ${_formatDate(data['timestamp'])}',
-//                               ),
-//                               trailing: IconButton(
-//                                 icon:
-//                                     const Icon(Icons.delete, color: Colors.red),
-//                                 onPressed: () => _deleteInvestment(
-//                                     investments[index].id, asset),
-//                               ),
-//                             ),
-//                           );
-//                         },
-//                       );
-//                     },
-//                   ),
-//                 ),
-//               ],
-//             ),
-//     );
-//   }
-// }
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_asset_wallet/services/api_service.dart';
+import 'package:flutter_asset_wallet/portfolio_data.dart';
 
 class PortfolioPage extends StatefulWidget {
   final Function(double totalValue, double currentValue) onValuesCalculated;
@@ -304,6 +17,7 @@ class PortfolioPage extends StatefulWidget {
 class _PortfolioPageState extends State<PortfolioPage> {
   double totalPortfolioValue = 0.0; // Wartość portfela wg zakupu
   double currentPortfolioValue = 0.0; // Wartość portfela wg rynku
+  List<PortfolioData> chartData = []; // Lista danych historycznych
 
   final String uid = FirebaseAuth.instance.currentUser?.uid ?? '';
   bool isLoading = false;
@@ -348,23 +62,66 @@ class _PortfolioPageState extends State<PortfolioPage> {
       // Pobierz aktualne ceny kryptowalut
       final prices = await ApiService().getCurrentPrices(ids);
 
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+      // Pobierz historyczne ceny kryptowalut z ostatnich 7 dni
+      final historicalPrices =
+          await ApiService().getHistoricalPricesWithFirebase(uid, ids, 7);
 
-        // Pobierz dane z dokumentu
-        double price = (data['price'] ?? 0.0).toDouble();
-        double amount = (data['amount'] ?? 0.0).toDouble();
-        String id = data['id'] ?? '';
+      // Przygotuj dane dla wykresu (ostatnie 7 dni)
+      List<PortfolioData> chartData = [];
+      for (int i = 0; i < 7; i++) {
+        double dailyUserValue = 0.0; // Wartość wg zakupu
+        double dailyMarketValue = 0.0; // Wartość wg rynku
 
-        // Oblicz wartość inwestycji na podstawie zakupionej ilości
-        totalValue += price * amount;
+        final dateForDay = DateTime.now()
+            .subtract(Duration(days: 6 - i)); // Data dla bieżącego dnia
 
-        // Oblicz wartość rynkową
-        if (prices.containsKey(id)) {
-          final marketPrice = prices[id]!;
-          currentValue += marketPrice * amount;
-        } else {
-          print("Brak aktualnych danych cenowych dla ID: $id");
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+
+          // Pobierz dane z dokumentu
+          double price = (data['price'] ?? 0.0).toDouble();
+          double amount = (data['amount'] ?? 0.0).toDouble();
+          String id = data['id'] ?? '';
+
+          // Pobierz datę zakupu
+          DateTime? purchaseDate;
+          if (data['date'] != null && data['date'] is Timestamp) {
+            purchaseDate = (data['date'] as Timestamp).toDate();
+          } else {
+            print(
+                "Nieprawidłowe lub brakujące pole 'date' w dokumencie: $data");
+            continue; // Pomijamy dokument bez prawidłowej daty
+          }
+
+          // Uwzględnij tylko dane dla aktywów zakupionych przed danym dniem
+          if (purchaseDate.isAfter(dateForDay)) continue;
+
+          // Oblicz wartość wg zakupu
+          dailyUserValue += price * amount;
+
+          // Oblicz wartość wg rynku na podstawie historycznych cen
+          if (historicalPrices.containsKey(id) &&
+              historicalPrices[id] != null) {
+            final marketPrice = historicalPrices[id]?[i] ?? 0.0;
+            dailyMarketValue += marketPrice * amount;
+          } else {
+            print("Brak historycznych danych dla ID: $id");
+          }
+        }
+
+        // Dodaj dane do wykresu
+        chartData.add(
+          PortfolioData(
+            dateForDay,
+            dailyUserValue,
+            dailyMarketValue,
+          ),
+        );
+
+        // Jeśli to dzisiejszy dzień, ustaw totalValue i currentValue
+        if (i == 6) {
+          totalValue = dailyUserValue;
+          currentValue = dailyMarketValue;
         }
       }
 
@@ -372,10 +129,17 @@ class _PortfolioPageState extends State<PortfolioPage> {
       setState(() {
         totalPortfolioValue = totalValue;
         currentPortfolioValue = currentValue;
+        chartData = chartData; // Przechowaj wygenerowane dane w stanie
       });
 
       // Przekaż wartości do rodzica
       widget.onValuesCalculated(totalValue, currentValue);
+
+      // Wyświetl dane wykresu (na potrzeby debugowania)
+      for (var data in chartData) {
+        print(
+            'Date: ${data.date}, UserValue: ${data.userValue}, MarketValue: ${data.marketValue}');
+      }
     } catch (e) {
       print("Błąd podczas obliczania wartości portfela: $e");
     } finally {
@@ -511,7 +275,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                                 'Cena zakupu: \$${price.toStringAsFixed(2)}\n'
                                 'Ilość: ${amount.toStringAsFixed(2)}\n'
                                 'Wartość: \$${value.toStringAsFixed(2)}\n'
-                                'Data zakupu: ${_formatDate(data['timestamp'])}',
+                                'Data zakupu: ${_formatDate(data['date'])}',
                               ),
                               trailing: IconButton(
                                 icon:
