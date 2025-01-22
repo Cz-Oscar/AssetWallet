@@ -47,6 +47,8 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   google_nav_bar: ^5.0.7
+  flutter_local_notifications: ^18.0.1
+  firebase_messaging: ^15.2.0
 
 dev_dependencies:
   flutter_test:

@@ -137,6 +137,9 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     });
 
     try {
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -151,6 +154,28 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
         'date': Timestamp.fromDate(_selectedDate!),
         'timestamp': FieldValue.serverTimestamp(),
       });
+      // Sprawdź, czy `default_value` istnieje w Firestore
+      final userSnapshot = await userDoc.get();
+      if (!userSnapshot.exists ||
+          userSnapshot.data()?['default_value'] == null) {
+        // Oblicz default_value jako suma (price * amount) wszystkich inwestycji
+        double defaultValue = 0.0;
+
+        QuerySnapshot investmentsSnapshot =
+            await userDoc.collection('investments').get();
+
+        for (var doc in investmentsSnapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          double price = (data['price'] ?? 0.0).toDouble();
+          double amount = (data['amount'] ?? 0.0).toDouble();
+          defaultValue += price * amount;
+        }
+
+        // Zapisz `default_value` w dokumencie użytkownika
+        await userDoc.update({'default_value': defaultValue});
+        print(
+            "Zaktualizowano default_value dla użytkownika ${user.uid}: $defaultValue");
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Inwestycja dodana pomyślnie!")),
@@ -169,6 +194,37 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Błąd zapisu: $e")),
       );
+    }
+  }
+
+  Future<void> _updateDefaultPortfolioValue(String userId) async {
+    try {
+      double totalValue = 0.0;
+
+      // Pobierz inwestycje z Firestore
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('investments')
+          .get();
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        double price = (data['price'] ?? 0.0).toDouble();
+        double amount = (data['amount'] ?? 0.0).toDouble();
+
+        totalValue += price * amount;
+      }
+
+      // Zapisz `totalValue` jako `default_value`
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'default_value': totalValue,
+      });
+
+      print(
+          "Zaktualizowano default_value dla użytkownika $userId: $totalValue");
+    } catch (e) {
+      print("Błąd podczas aktualizacji default_value: $e");
     }
   }
 

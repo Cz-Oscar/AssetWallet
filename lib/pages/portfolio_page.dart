@@ -125,6 +125,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
         }
       }
 
+// Zapisz `totalValue` do Firestore jako `default_value`
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'default_value': totalValue,
+      });
+
       // Ustaw nowe wartości portfela
       setState(() {
         totalPortfolioValue = totalValue;
