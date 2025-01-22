@@ -1,10 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
 import 'package:flutter_asset_wallet/components/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_asset_wallet/main.dart';
 import 'package:flutter_asset_wallet/services/auth_service.dart';
+import 'package:flutter_asset_wallet/services/firebase_service.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -44,7 +47,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = usernameController.text.trim();
     final password = passwordController.text.trim();
 
-    // Display loading screen
+    // Wyświetl ekran ładowania
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -55,30 +58,48 @@ class _RegisterPageState extends State<RegisterPage> {
       },
     );
 
-    // try create user
-
     try {
-      // Attempt sign in
-
-      //check if password are equal
+      // Sprawdź, czy hasła są identyczne
       if (passwordController.text != confirmPasswordController.text) {
-        if (mounted) Navigator.pop(context);
-        showErrorMessage('Passwords not equal');
+        if (mounted) Navigator.pop(context); // Zamknij ekran ładowania
+        showErrorMessage('Passwords do not match');
         return;
       }
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+
+      // Zarejestruj użytkownika
+      UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Close loading dialog on success
+      // Pobierz UID użytkownika
+      final userId = userCredential.user?.uid ?? '';
+
+      if (userId.isNotEmpty) {
+        // Rozpocznij sprawdzanie powiadomień
+        startNotificationCheck(userId);
+      }
+
+      // Zapisz dane użytkownika w Firestore
+      if (userId != null) {
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+          'email': email,
+          'createdAt': DateTime.now(),
+        });
+
+        // Zapisz token FCM
+        await FirebaseService().saveFcmToken(userId);
+      }
+
+      // Zamknij ekran ładowania po sukcesie
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      // Close loading dialog and show error message
+      // Zamknij ekran ładowania i wyświetl komunikat o błędzie
       if (mounted) Navigator.pop(context);
       showErrorMessage(e.code);
     } catch (e) {
-      // Close loading dialog on any unexpected error
+      // Zamknij ekran ładowania i wyświetl komunikat o nieoczekiwanym błędzie
       if (mounted) Navigator.pop(context);
       showErrorMessage('Unexpected error occurred');
     }
