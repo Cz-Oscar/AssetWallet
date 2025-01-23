@@ -82,15 +82,12 @@ class _RegisterPageState extends State<RegisterPage> {
       }
 
       // Zapisz dane użytkownika w Firestore
-      if (userId != null) {
-        await FirebaseFirestore.instance.collection('users').doc(userId).set({
-          'email': email,
-          'createdAt': DateTime.now(),
-        });
-
-        // Zapisz token FCM
-        await FirebaseService().saveFcmToken(userId);
-      }
+      // if (userId != null) {
+      //   await FirebaseFirestore.instance.collection('users').doc(userId).set({
+      //     'email': email,
+      //     'createdAt': DateTime.now(),
+      //   });
+      // }
 
       // Zamknij ekran ładowania po sukcesie
       if (mounted) Navigator.pop(context);
