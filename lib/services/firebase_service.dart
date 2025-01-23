@@ -33,23 +33,4 @@ class FirebaseService {
     }
     return [];
   }
-
-  Future<void> saveFcmToken(String userId) async {
-    try {
-      // Pobierz token FCM
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken != null) {
-        // Zapisz token do Firestore w dokumencie użytkownika
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update({'fcm_token': fcmToken});
-        print('Token FCM zapisany: $fcmToken');
-      } else {
-        print('Nie udało się uzyskać tokenu FCM.');
-      }
-    } catch (e) {
-      print('Błąd podczas zapisywania tokenu FCM: $e');
-    }
-  }
 }

@@ -82,6 +82,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   Future<void> _addInvestmentToFirestore() async {
     FocusScope.of(context).unfocus();
 
+    // Sprawdź, czy wszystkie pola zostały wypełnione
     if (_selectedAsset == null ||
         _cryptoController.text.isEmpty ||
         _selectedExchange == null ||
@@ -102,7 +103,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       return;
     }
 
-    // Pobranie ID kryptowaluty na podstawie symbolu
+    // Pobierz ID kryptowaluty na podstawie symbolu
     final String symbol = _cryptoController.text.toLowerCase();
     print("Zawartość _allAssets: ${_allAssets.take(10)}");
 
@@ -123,28 +124,22 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
 
     final cryptoId = selectedCrypto['id'] ?? 'unknown';
 
-    // Logowanie dla debugowania
-    print("Symbol: $symbol, ID: $cryptoId");
-    print({
-      'asset': _selectedAsset,
-      'symbol': _cryptoController.text,
-      'id': cryptoId, // Powinno być prawidłowe ID
-      'exchange': _selectedExchange,
-      'price': double.tryParse(_priceController.text) ?? 0.0,
-      'amount': double.tryParse(_amountController.text) ?? 0.0,
-      'date': Timestamp.fromDate(_selectedDate!),
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
     try {
       final userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('investments')
-          .add({
+      // Sprawdź, czy dokument użytkownika istnieje
+      final userSnapshot = await userDoc.get();
+      if (!userSnapshot.exists) {
+        print('Dokument użytkownika nie istnieje. Tworzenie nowego...');
+        await userDoc.set({
+          'email': user.email,
+          'createdAt': DateTime.now(),
+        });
+      }
+
+      // Dodaj inwestycję do Firestore
+      final investmentData = {
         'asset': _selectedAsset,
         'symbol': _cryptoController.text,
         'id': cryptoId, // Zapisujemy ID
@@ -153,12 +148,14 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
         'amount': double.tryParse(_amountController.text) ?? 0.0,
         'date': Timestamp.fromDate(_selectedDate!),
         'timestamp': FieldValue.serverTimestamp(),
-      });
-      // Sprawdź, czy `default_value` istnieje w Firestore
-      final userSnapshot = await userDoc.get();
+      };
+
+      await userDoc.collection('investments').add(investmentData);
+      print("Dodano inwestycję: $investmentData");
+
+      // Sprawdź i zaktualizuj `default_value`, jeśli nie istnieje
       if (!userSnapshot.exists ||
           userSnapshot.data()?['default_value'] == null) {
-        // Oblicz default_value jako suma (price * amount) wszystkich inwestycji
         double defaultValue = 0.0;
 
         QuerySnapshot investmentsSnapshot =
@@ -181,6 +178,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
         const SnackBar(content: Text("Inwestycja dodana pomyślnie!")),
       );
 
+      // Resetuj pola formularza
       setState(() {
         _selectedAsset = null;
         _selectedExchange = null;
