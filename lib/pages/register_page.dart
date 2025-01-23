@@ -87,9 +87,6 @@ class _RegisterPageState extends State<RegisterPage> {
           'email': email,
           'createdAt': DateTime.now(),
         });
-
-        // Zapisz token FCM
-        await FirebaseService().saveFcmToken(userId);
       }
 
       // Zamknij ekran ładowania po sukcesie
