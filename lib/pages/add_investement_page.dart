@@ -125,6 +125,22 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     final cryptoId = selectedCrypto['id'] ?? 'unknown';
 
     try {
+      // final userDoc =
+      //     FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      // // Sprawdź, czy dokument użytkownika istnieje
+      // final userSnapshot = await userDoc.get();
+      // if (!userSnapshot.exists) {
+      //   print('Dokument użytkownika nie istnieje. Tworzenie nowego...');
+      //   await userDoc.set({
+      //     'email': user.email,
+      //     'lastActiveAt':
+      //         FieldValue.serverTimestamp(), // Ustawienie lastActiveAt
+      //   });
+      // }
+      // await userDoc.update({
+      //   'lastActiveAt': FieldValue.serverTimestamp(),
+      // });
       final userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -134,10 +150,17 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
         print('Dokument użytkownika nie istnieje. Tworzenie nowego...');
         await userDoc.set({
           'email': user.email,
-          'createdAt': DateTime.now(),
+          'lastActiveAt':
+              FieldValue.serverTimestamp(), // Ustawienie lastActiveAt
+          'default_value': 0.0, // Domyślna wartość
+        });
+      } else {
+        // Jeśli dokument już istnieje, zaktualizuj pole `lastActiveAt`
+        print('Aktualizowanie lastActiveAt...');
+        await userDoc.update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
         });
       }
-
       // Dodaj inwestycję do Firestore
       final investmentData = {
         'asset': _selectedAsset,
@@ -151,7 +174,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       };
 
       await userDoc.collection('investments').add(investmentData);
-      print("Dodano inwestycję: $investmentData");
+      print("Dodano inwestycję i zaktualizowano lastActiveAt.");
 
       // Sprawdź i zaktualizuj `default_value`, jeśli nie istnieje
       if (!userSnapshot.exists ||

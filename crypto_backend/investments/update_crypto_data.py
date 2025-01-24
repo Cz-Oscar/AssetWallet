@@ -183,7 +183,7 @@ def get_current_prices(ids):
 
 # Uruchom harmonogram
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_crypto_data, 'interval', seconds=60)
+scheduler.add_job(update_crypto_data, 'interval', minutes=1)
 scheduler.start()
 
 # Utrzymaj proces aktywny
