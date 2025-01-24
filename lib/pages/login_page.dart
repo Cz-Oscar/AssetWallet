@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
@@ -57,11 +58,22 @@ class _LoginPageState extends State<LoginPage> {
     // try login
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Logowanie użytkownika
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      final userId = userCredential.user?.uid;
+      if (userId != null) {
+        // Aktualizacja lastActiveAt w tle
+        FirebaseFirestore.instance.collection('users').doc(userId).update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
+        }).catchError((error) {
+          print("Błąd aktualizacji lastActiveAt: $error");
+        });
+      }
       // Close loading dialog on success
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
