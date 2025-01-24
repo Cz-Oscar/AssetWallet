@@ -1,13 +1,13 @@
 """
 Skrypt aktualizujący dane o kryptowalutach w Firestore.
 """
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from firebase_admin import credentials, firestore
-import time
+from datetime import datetime, timedelta
 import firebase_admin
 import requests
-
+import pytz  # Do obsługi stref czasowych
+import time
 
 # Licznik iteracji do testów
 iteration_count = 0
@@ -28,8 +28,14 @@ def update_crypto_data():
     global iteration_count
     iteration_count += 1
 
+   # Oblicz czas sprzed 24 godzin
+    now = datetime.now(pytz.UTC)  # Obecny czas w UTC
+    one_day_ago = now - timedelta(days=1)  # Czas sprzed 24 godzin
+
     print("rozpoczeto aktualizacje danych portifolio")
-    users = db.collection('users').stream()
+
+    users = db.collection('users').where(
+        'lastActiveAt', '>=', one_day_ago).stream()
 
     for user in users:
         user_id = user.id
@@ -68,9 +74,9 @@ def update_crypto_data():
 
         # Sprawdź zmiany względem `default_value`
         if default_value > 0 and abs(new_value - default_value) / default_value > 0.05:
-            print(f"Znacząca zmiana względem default_value dla {user_id}")
             db.collection('users').document(user_id).update({
-                'change_from_default': True
+                'change_from_default': True,
+                'significant_change': True,
             })
 
     if iteration_count >= max_iterations:
@@ -183,7 +189,7 @@ def get_current_prices(ids):
 
 # Uruchom harmonogram
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_crypto_data, 'interval', minutes=1)
+scheduler.add_job(update_crypto_data, 'interval', seconds=10)
 scheduler.start()
 
 # Utrzymaj proces aktywny

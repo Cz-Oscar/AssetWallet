@@ -3,12 +3,14 @@
 <plist version="1.0">
 <dict>
 <!-- Put me in the [my_project]/ios/Runner/Info.plist file -->
-<key>NSLocalNotificationsUsageDescription</key>
-<string>Ta aplikacja używa powiadomień, aby informować Cię o zmianach w Twoim portfolio.</string>
-<key>UIBackgroundModes</key>
-<array>
-    <string>fetch</string>
-</array>
+	<key>NSLocalNotificationsUsageDescription</key>
+	<string>Ta aplikacja używa powiadomień, aby informować Cię o zmianach w Twoim portfolio.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+
 
 <!-- Google Sign-in Section -->
 <key>CFBundleURLTypes</key>
