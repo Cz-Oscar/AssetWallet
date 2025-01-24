@@ -28,6 +28,21 @@ class _PortfolioPageState extends State<PortfolioPage> {
     _calculatePortfolioValues();
   }
 
+  String formatPrice(double price) {
+    // Formatuj z maksymalnie 5 miejscami po przecinku
+    String formatted = price.toStringAsFixed(5);
+
+    // Usuń nadmiarowe zera i kropkę, jeśli niepotrzebne
+    if (formatted.contains('.')) {
+      formatted =
+          formatted.replaceAll(RegExp(r'0+$'), ''); // Usuń zerowe końcówki
+      formatted = formatted.replaceAll(
+          RegExp(r'\.$'), ''); // Usuń kropkę, jeśli na końcu
+    }
+
+    return formatted;
+  }
+
   Future<void> _calculatePortfolioValues() async {
     setState(() => isLoading = true);
 
@@ -43,7 +58,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        setState(() => isLoading = false);
+        setState(() {
+          totalPortfolioValue = 0.0;
+          currentPortfolioValue = 0.0;
+          isLoading = false;
+        });
         return;
       }
 
@@ -129,6 +148,8 @@ class _PortfolioPageState extends State<PortfolioPage> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'default_value': totalValue,
       });
+      print("Nowa wartość wg zakupu: $totalValue");
+      print("Nowa wartość wg rynku: $currentValue");
 
       // Ustaw nowe wartości portfela
       setState(() {
@@ -162,14 +183,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
           .doc(id)
           .delete();
 
+      await _calculatePortfolioValues();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Usunięto inwestycję: $assetName'),
           duration: const Duration(seconds: 2),
         ),
       );
-
-      await _calculatePortfolioValues();
     } catch (e) {
       print("Błąd podczas usuwania inwestycji: $e");
     } finally {
@@ -204,7 +225,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                             fontSize: 18, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        '\$${totalPortfolioValue.toStringAsFixed(2)}',
+                        '\$${formatPrice(totalPortfolioValue)}',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -218,7 +239,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                             fontSize: 18, fontWeight: FontWeight.w500),
                       ),
                       Text(
-                        '\$${currentPortfolioValue.toStringAsFixed(2)}',
+                        '\$${formatPrice(currentPortfolioValue)}',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -246,7 +267,8 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
                       if (investments.isEmpty) {
                         return const Center(
-                          child: Text('Brak aktywów w portfelu.'),
+                          child: Text(
+                              'Brak aktywów w portfelu. Dodaj pierwszą inwestycje kliknij + w prawym dolnym rogu!'),
                         );
                       }
 
@@ -277,9 +299,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
                               title: Text(symbol.toUpperCase()),
                               subtitle: Text(
                                 'Giełda: $exchange\n'
-                                'Cena zakupu: \$${price.toStringAsFixed(2)}\n'
-                                'Ilość: ${amount.toStringAsFixed(2)}\n'
-                                'Wartość: \$${value.toStringAsFixed(2)}\n'
+                                'Cena zakupu: \$${formatPrice(price)}\n'
+                                'Ilość: ${formatPrice(amount)}\n'
+                                'Wartość: \$${formatPrice(value)}\n'
                                 'Data zakupu: ${_formatDate(data['date'])}',
                               ),
                               trailing: IconButton(

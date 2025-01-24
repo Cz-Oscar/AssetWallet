@@ -258,8 +258,6 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     SizedBox(height: 5),
                     _buildPriceFieldWithToolbar(),
                     SizedBox(height: 20),
-                    // Text('Wybierz date inwestycji: ',
-                    //     style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
                     _buildDatePickerField(),
                     SizedBox(height: 20),
@@ -273,18 +271,6 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
             ),
     );
   }
-
-  // Widget _buildPriceField() {
-  //   return TextField(
-  //     controller: _priceController,
-  //     keyboardType: TextInputType.numberWithOptions(decimal: true),
-  //     decoration: InputDecoration(
-  //       labelText: 'Podaj cenę zakupu',
-  //       border: OutlineInputBorder(),
-  //       prefixIcon: Icon(Icons.attach_money),
-  //     ),
-  //   );
-  // }
 
   Widget _buildAmountField() {
     return TextField(
@@ -552,15 +538,23 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                 'USD',
                 style: TextStyle(color: Colors.grey),
               ),
-            ), // Dodano jako widget 'suffix'
+            ),
           ),
+          onChanged: (value) {
+            // Zamiana przecinka na kropkę
+            String updatedValue = value.replaceAll(',', '.');
+
+            // Walidacja liczby
+            if ('.'.allMatches(updatedValue).length > 1) {
+              updatedValue = updatedValue.substring(0, updatedValue.length - 1);
+            }
+
+            _priceController.text = updatedValue;
+            _priceController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _priceController.text.length),
+            );
+          },
         ),
-        // CupertinoButton(
-        //   child: Text("Gotowe"),
-        //   onPressed: () {
-        //     FocusScope.of(context).unfocus(); // Schowanie klawiatury
-        //   },
-        // ),
       ],
     );
   }

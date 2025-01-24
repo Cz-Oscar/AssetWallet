@@ -9,6 +9,14 @@ class PortfolioChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (chartData.isEmpty) {
+      return Center(
+        child: Text(
+          'Nie posiadasz jak narazie żadnych inwestycji dodaj pierwszą!',
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      );
+    }
     // Pobierz minimalną i maksymalną wartość w danych
     final minValue = chartData
         .map((data) => data.userValue)
