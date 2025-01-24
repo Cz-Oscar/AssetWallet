@@ -14,11 +14,14 @@ Future<void> initializeNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  final DarwinInitializationSettings initializationSettingsIOS =
-      DarwinInitializationSettings();
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
 
   final InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
   );
 
@@ -32,9 +35,29 @@ Future<void> initializeNotifications() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inicjalizacja Firebase
-  await initializeNotifications();
+  await Firebase.initializeApp();
+  await initializeNotifications(); // Inicjalizacja powiadomień
   runApp(const MyApp());
+  print("Testowe powiadomienie jest gotowe do wysłania");
+
+  // Wyślij testowe powiadomienie po starcie aplikacji
+  Future.delayed(const Duration(seconds: 5), () {
+    print("Wysyłam testowe powiadomienie...");
+
+    flutterLocalNotificationsPlugin.show(
+      0,
+      'Test Powiadomienia',
+      'To jest testowe powiadomienie!',
+      NotificationDetails(
+        iOS: DarwinNotificationDetails(
+          presentAlert: true, // Pokazuje powiadomienie
+          presentBadge: true, // Aktualizuje badge aplikacji
+          presentSound: true, // Odgrywa dźwięk
+        ), // Powiadomienia dla iOS
+      ),
+    );
+    print("Powiadomienie zostało wysłane");
+  });
 }
 
 void startNotificationCheck(String userId) {

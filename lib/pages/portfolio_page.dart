@@ -184,6 +184,11 @@ class _PortfolioPageState extends State<PortfolioPage> {
           .delete();
 
       await _calculatePortfolioValues();
+      // Zaktualizuj pole lastActiveAt
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update({'lastActiveAt': FieldValue.serverTimestamp()});
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
