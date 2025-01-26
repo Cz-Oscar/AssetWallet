@@ -61,7 +61,11 @@ void main() async {
 }
 
 void startNotificationCheck(String userId) {
+  print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
+
   Timer.periodic(const Duration(minutes: 5), (timer) {
+    print("Sprawdzanie powiadomień dla $userId...");
+
     checkPortfolioChange(userId);
   });
 }
@@ -87,6 +91,8 @@ class AuthStateHandler extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
+          startNotificationCheck(
+              snapshot.data!.uid); // Uruchom ponownie funkcję
           return HomePage();
         } else {
           return const LoginOrRegisterPage();

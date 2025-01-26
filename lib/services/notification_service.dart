@@ -6,6 +6,8 @@ Future<void> checkPortfolioChange(String userId) async {
       await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
   if (userDoc.exists) {
+    print("Sprawdzam significant_change dla użytkownika $userId");
+
     final data = userDoc.data();
     if (data?['significant_change'] == true) {
       // Wyślij powiadomienie
