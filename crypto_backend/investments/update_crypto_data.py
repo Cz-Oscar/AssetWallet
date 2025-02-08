@@ -28,7 +28,7 @@ def update_crypto_data():
     global iteration_count
     iteration_count += 1
 
-   # Oblicz czas sprzed 24 godzin
+    # Oblicz czas sprzed 24 godzin
     now = datetime.now(pytz.UTC)  # Obecny czas w UTC
     one_day_ago = now - timedelta(days=1)  # Czas sprzed 24 godzin
 
@@ -45,44 +45,65 @@ def update_crypto_data():
 
         # Oblicz nową wartość portfolio wg ceny rynkowej
         new_value = calculate_portfolio_value(user_id)
-        current_value = user_data.get('current_value', 0)
-
-        # Oblicz default_value wg ceny zakupu
-        default_value = user_data.get('default_value', None)
-        if default_value is None:
-            default_value = calculate_default_portfolio_value(user_id)
-            print(f"[INFO] Dodano default_value dla użytkownika {
-                  user_id}: {default_value}")
-            db.collection('users').document(user_id).update(
-                {'default_value': default_value})
-
-        print(f"Stara wartość: {current_value}, Nowa wartość: {new_value}")
-        print(f"Default value (wartość zakupu): {default_value}")
-
-        # Sprawdź zmiany względem `current_value`
-        if current_value > 0 and abs(new_value - current_value) / current_value > 0.05:
-            print(f"Znacząca zmiana dla użytkownika {user_id}")
+        if new_value == 0:
+            print(
+                f"[DEBUG] Wartość portfela użytkownika {user_id} wynosi 0. Resetuję flagę.")
             db.collection('users').document(user_id).update({
+                'significant_change': False,
+                'current_value': 0,  # Zapisz bieżącą wartość
+                # Upewnij się, że nie jest 0
+                'notification_base_value': default_value if default_value > 0 else 0,
+            })
+            continue  # Pomijamy dalsze obliczenia
+
+        notification_base_value = user_data.get(
+            'notification_base_value', user_data.get('default_value', 0))
+        default_value = user_data.get('default_value', 0)
+
+        # Pomijamy użytkowników bez inwestycji lub bazowej wartości
+        if notification_base_value == 0:
+            notification_base_value = default_value if default_value > 0 else new_value
+            if notification_base_value == 0:
+                print(
+                    f"[DEBUG] Użytkownik {user_id} nie ma żadnej wartości bazowej. Pomijam.")
+                db.collection('users').document(user_id).update({
+                    'current_value': new_value,  # Zapisz bieżącą wartość
+                    'significant_change': False,  # Resetuj flagę
+                })
+                continue
+
+        # Oblicz zmianę procentową względem `notification_base_value`
+        change_percent = (new_value - notification_base_value) / \
+            notification_base_value * 100
+
+        # Sprawdź, czy zmiana przekroczyła próg ±5%
+        if abs(change_percent) >= 5:
+            print(
+                f"Zmiana przekroczyła próg ±5% dla użytkownika {user_id}: {change_percent:.2f}%")
+
+            # Wyślij powiadomienie (przy użyciu istniejącej logiki w frontendzie)
+            db.collection('users').document(user_id).update({
+                'significant_change': True,  # Frontend obsłuży powiadomienie
+                'notification_base_value': new_value,  # Przesuń próg na nową wartość
                 'current_value': new_value,
-                'significant_change': True,
+                'change_percent': change_percent,  # Dodajemy zmianę procentową
+
+                'lastActiveAt': now,  # Aktualizuj aktywność
             })
         else:
+            # Zaktualizuj tylko bieżącą wartość, bez zmiany progu
             db.collection('users').document(user_id).update({
                 'current_value': new_value,
-                'significant_change': False,
+                'significant_change': False,  # Resetuj flagę
             })
 
-        # Sprawdź zmiany względem `default_value`
-        if default_value > 0 and abs(new_value - default_value) / default_value > 0.05:
-            db.collection('users').document(user_id).update({
-                'change_from_default': True,
-                'significant_change': True,
-            })
+        print(f"Zaktualizowano dane dla użytkownika {user_id}: {new_value}")
 
     if iteration_count >= max_iterations:
         print(
             "[INFO] Osiągnięto maksymalną liczbę wywołań. Zatrzymywanie harmonogramu...")
         scheduler.shutdown()
+
 
 # Funkcja obliczająca wartość portfolio
 
@@ -189,7 +210,7 @@ def get_current_prices(ids):
 
 # Uruchom harmonogram
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_crypto_data, 'interval', seconds=10)
+scheduler.add_job(update_crypto_data, 'interval', seconds=30, max_instances=1)
 scheduler.start()
 
 # Utrzymaj proces aktywny

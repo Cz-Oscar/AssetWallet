@@ -63,7 +63,7 @@ void main() async {
 void startNotificationCheck(String userId) {
   print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
 
-  Timer.periodic(const Duration(minutes: 5), (timer) {
+  Timer.periodic(const Duration(seconds: 10), (timer) {
     print("Sprawdzanie powiadomień dla $userId...");
 
     checkPortfolioChange(userId);

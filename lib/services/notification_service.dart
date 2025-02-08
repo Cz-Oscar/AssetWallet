@@ -9,12 +9,30 @@ Future<void> checkPortfolioChange(String userId) async {
     print("Sprawdzam significant_change dla użytkownika $userId");
 
     final data = userDoc.data();
-    if (data?['significant_change'] == true) {
+    final bool significantChange = data?['significant_change'] ?? false;
+    final double changePercent = (data?['change_percent'] ?? 0.0)
+        .toDouble(); // Pobierz `change_percent` z Firebase
+
+    print("change_percent z Firebase: $changePercent");
+
+    if (significantChange) {
+      String message;
+
+      if (changePercent > 0) {
+        message =
+            "Twoje portfolio wzrosło o ${changePercent.toStringAsFixed(2)}%!🥳";
+      } else {
+        message =
+            "Twoje portfolio spadło o ${changePercent.abs().toStringAsFixed(2)}%!😞";
+      }
+
+      print("Wiadomość powiadomienia: $message");
+
       // Wyślij powiadomienie
       await FlutterLocalNotificationsPlugin().show(
         0, // ID powiadomienia
         'Zmiana w portfolio!',
-        'Wartość Twojego portfolio zmieniła się o ponad 5%!',
+        message,
         NotificationDetails(
           android: AndroidNotificationDetails(
             'channel_id', // Unikalny identyfikator kanału
