@@ -43,6 +43,45 @@ class _PortfolioPageState extends State<PortfolioPage> {
     return formatted;
   }
 
+// funkcje do pobierania obrazów
+  Future<String?> _getCryptoImage(String symbol) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('metadata')
+          .doc('cryptocurrencies')
+          .get();
+      final data = snapshot.data()?['data'] as List<dynamic>?;
+      final crypto = data?.firstWhere(
+        (crypto) =>
+            crypto['symbol'].toString().toLowerCase() == symbol.toLowerCase(),
+        orElse: () => null,
+      );
+      return crypto?['image'];
+    } catch (e) {
+      print('Błąd pobierania obrazu kryptowaluty: $e');
+      return null;
+    }
+  }
+
+  Future<String?> _getExchangeImage(String exchangeName) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('metadata')
+          .doc('exchanges')
+          .get();
+      final data = snapshot.data()?['data'] as List<dynamic>?;
+      final exchange = data?.firstWhere(
+        (ex) =>
+            ex['name'].toString().toLowerCase() == exchangeName.toLowerCase(),
+        orElse: () => null,
+      );
+      return exchange?['image'];
+    } catch (e) {
+      print('Błąd pobierania obrazu giełdy: $e');
+      return null;
+    }
+  }
+
   Future<void> _calculatePortfolioValues() async {
     setState(() => isLoading = true);
 
@@ -176,6 +215,9 @@ class _PortfolioPageState extends State<PortfolioPage> {
   Future<void> _deleteInvestment(String id, String assetName) async {
     try {
       setState(() => isLoading = true);
+
+      final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -183,12 +225,25 @@ class _PortfolioPageState extends State<PortfolioPage> {
           .doc(id)
           .delete();
 
+      double defaultValue = 0.0;
+      // Pobierz wszystkie pozostałe inwestycje użytkownika
+      QuerySnapshot investmentsSnapshot =
+          await userDoc.collection('investments').get();
+
+      for (var doc in investmentsSnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        double price = (data['price'] ?? 0.0).toDouble();
+        double amount = (data['amount'] ?? 0.0).toDouble();
+        defaultValue += price * amount;
+      }
+
       await _calculatePortfolioValues();
       // Zaktualizuj pole lastActiveAt
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .update({'lastActiveAt': FieldValue.serverTimestamp()});
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'lastActiveAt': FieldValue.serverTimestamp(),
+        'default_value': defaultValue,
+      });
+      print("Zaktualizowano default_value dla użytkownika $uid: $defaultValue");
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -288,34 +343,64 @@ class _PortfolioPageState extends State<PortfolioPage> {
                           final price = (data['price'] ?? 0.0).toDouble();
                           final amount = (data['amount'] ?? 0.0).toDouble();
                           final value = price * amount;
-                          final iconUrl = data['iconUrl'] ??
-                              'https://via.placeholder.com/40';
 
-                          return Card(
-                            elevation: 2,
-                            child: ListTile(
-                              leading: Image.network(
-                                iconUrl,
-                                width: 30,
-                                height: 30,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.image_not_supported),
-                              ),
-                              title: Text(symbol.toUpperCase()),
-                              subtitle: Text(
-                                'Giełda: $exchange\n'
-                                'Cena zakupu: \$${formatPrice(price)}\n'
-                                'Ilość: ${formatPrice(amount)}\n'
-                                'Wartość: \$${formatPrice(value)}\n'
-                                'Data zakupu: ${_formatDate(data['date'])}',
-                              ),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteInvestment(
-                                    investments[index].id, asset),
-                              ),
-                            ),
+                          return FutureBuilder<List<String?>>(
+                            future: Future.wait([
+                              _getCryptoImage(
+                                  symbol), // Pobierz obraz kryptowaluty
+                              _getExchangeImage(
+                                  exchange), // Pobierz obraz giełdy
+                            ]),
+                            builder: (context, snapshot) {
+                              final images = snapshot.data ?? [null, null];
+                              final cryptoImage =
+                                  images[0] ?? 'https://via.placeholder.com/40';
+                              final exchangeImage =
+                                  images[1] ?? 'https://via.placeholder.com/40';
+
+                              return Card(
+                                elevation: 2,
+                                child: ListTile(
+                                  leading: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Image.network(
+                                        cryptoImage,
+                                        width: 30,
+                                        height: 30,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(
+                                                    Icons.image_not_supported),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Image.network(
+                                        exchangeImage,
+                                        width: 30,
+                                        height: 30,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.business),
+                                      ),
+                                    ],
+                                  ),
+                                  title: Text(symbol.toUpperCase()),
+                                  subtitle: Text(
+                                    'Giełda: $exchange\n'
+                                    'Cena zakupu: \$${formatPrice(price)}\n'
+                                    'Ilość: ${formatPrice(amount)}\n'
+                                    'Wartość: \$${formatPrice(value)}\n'
+                                    'Data zakupu: ${_formatDate(data['date'])}',
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteInvestment(
+                                        investments[index].id, asset),
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       );

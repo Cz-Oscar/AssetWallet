@@ -105,7 +105,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
 
     // Pobierz ID kryptowaluty na podstawie symbolu
     final String symbol = _cryptoController.text.toLowerCase();
-    print("Zawartość _allAssets: ${_allAssets.take(10)}");
+    // print("Zawartość _allAssets: ${_allAssets.take(10)}");
 
     final selectedCrypto = _allAssets.firstWhere(
       (crypto) => crypto['symbol']?.toLowerCase() == symbol,
@@ -125,22 +125,6 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     final cryptoId = selectedCrypto['id'] ?? 'unknown';
 
     try {
-      // final userDoc =
-      //     FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-      // // Sprawdź, czy dokument użytkownika istnieje
-      // final userSnapshot = await userDoc.get();
-      // if (!userSnapshot.exists) {
-      //   print('Dokument użytkownika nie istnieje. Tworzenie nowego...');
-      //   await userDoc.set({
-      //     'email': user.email,
-      //     'lastActiveAt':
-      //         FieldValue.serverTimestamp(), // Ustawienie lastActiveAt
-      //   });
-      // }
-      // await userDoc.update({
-      //   'lastActiveAt': FieldValue.serverTimestamp(),
-      // });
       final userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
@@ -205,9 +189,12 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       setState(() {
         _selectedAsset = null;
         _selectedExchange = null;
+        _selectedCryptoImage = null; // Reset obrazka kryptowaluty
+        _selectedExchangeImage = null; // Reset obrazka giełdy
         _priceController.clear();
         _amountController.clear();
-        _cryptoController.clear();
+        _cryptoController.clear(); // Reset kontrolera kryptowaluty
+        _exchangeController.clear(); // Reset kontrolera giełdy
         _selectedDate = null;
       });
     } catch (e) {
