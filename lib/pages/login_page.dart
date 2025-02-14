@@ -219,17 +219,13 @@ class _LoginPageState extends State<LoginPage> {
                   height: 30,
                 ),
 
-                // Google and Apple buttons
+                // Google and button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SquareBox(
                         onTap: () => AuthService().signInWithGoogle(),
                         imagePath: 'lib/images/google_logo.png'),
-                    SizedBox(width: 35),
-                    SquareBox(
-                        onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'lib/images/apple_logo.png'),
                   ],
                 ),
                 const SizedBox(

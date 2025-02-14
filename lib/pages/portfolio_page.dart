@@ -119,6 +119,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
       // Pobierz aktualne ceny kryptowalut
       final prices = await ApiService().getCurrentPrices(ids);
+      print("🔥 Pobrane ceny w aplikacji: $prices");
 
       // Pobierz historyczne ceny kryptowalut z ostatnich 7 dni
       final historicalPrices =
@@ -157,13 +158,15 @@ class _PortfolioPageState extends State<PortfolioPage> {
           // Oblicz wartość wg zakupu
           dailyUserValue += price * amount;
 
-          // Oblicz wartość wg rynku na podstawie historycznych cen
-          if (historicalPrices.containsKey(id) &&
-              historicalPrices[id] != null) {
-            final marketPrice = historicalPrices[id]?[i] ?? 0.0;
+          // Oblicz wartość wg rynku na podstawie AKTUALNYCH cen z API
+          if (prices.containsKey(id) && prices[id] != null) {
+            final marketPrice = prices[id] ?? 0.0;
             dailyMarketValue += marketPrice * amount;
           } else {
-            print("Brak historycznych danych dla ID: $id");
+            print(
+                "⚠️ Brak aktualnej ceny dla $id – używam ostatniej historycznej");
+            final marketPrice = historicalPrices[id]?[i] ?? 0.0;
+            dailyMarketValue += marketPrice * amount;
           }
         }
 
@@ -266,9 +269,14 @@ class _PortfolioPageState extends State<PortfolioPage> {
 
   @override
   Widget build(BuildContext context) {
+    double percentageChange = totalPortfolioValue == 0
+        ? 0
+        : ((currentPortfolioValue - totalPortfolioValue) /
+                totalPortfolioValue) *
+            100;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Portfolio'),
+        title: const Text('Portfel'),
         backgroundColor: Colors.lightBlue,
       ),
       body: isLoading
@@ -280,7 +288,7 @@ class _PortfolioPageState extends State<PortfolioPage> {
                   child: Column(
                     children: [
                       const Text(
-                        'Wartość portfela wg zakupu:',
+                        'Wartość inwestycji:',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w500),
                       ),
@@ -289,21 +297,39 @@ class _PortfolioPageState extends State<PortfolioPage> {
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green,
+                          color: Colors.blueGrey,
                         ),
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'Wartość portfela wg rynku:',
+                        'Obecna wartość portfela:',
                         style: TextStyle(
                             fontSize: 18, fontWeight: FontWeight.w500),
                       ),
                       Text(
                         '\$${formatPrice(currentPortfolioValue)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue,
+                          color: Colors.deepOrange[300],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16), // Odstęp między wartościami
+                      const Text(
+                        'Zmiana wartości portfela:',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w500),
+                      ),
+                      Text(
+                        '${percentageChange.toStringAsFixed(2)}%', // Zaokrąglona wartość do 2 miejsc po przecinku
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: percentageChange >= 0
+                              ? Colors.green
+                              : Colors
+                                  .red, // Zielony dla wzrostu, czerwony dla spadku
                         ),
                       ),
                     ],
@@ -328,7 +354,10 @@ class _PortfolioPageState extends State<PortfolioPage> {
                       if (investments.isEmpty) {
                         return const Center(
                           child: Text(
-                              'Brak aktywów w portfelu. Dodaj pierwszą inwestycje kliknij + w prawym dolnym rogu!'),
+                            ' Brak aktywów w portfelu. Dodaj pierwszą        inwestycje kliknij + w prawym dolnym rogu!',
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.black54),
+                          ),
                         );
                       }
 

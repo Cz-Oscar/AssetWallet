@@ -18,6 +18,7 @@ class _HomePageState extends State<HomePage> {
 
   double totalPortfolioValue = 0.0; // Wartość portfela wg zakupu
   double currentPortfolioValue = 0.0; // Wartość portfela wg rynku
+  
 
   void updatePortfolioValues(double totalValue, double currentValue) {
     setState(() {
@@ -32,8 +33,9 @@ class _HomePageState extends State<HomePage> {
           onValuesCalculated: updatePortfolioValues, // Przekazanie callbacku
         ),
         ChartsPage(
-            // chartData: chartData, // Przekazanie poprawnych danych historycznych
-            ),
+          totalPortfolioValue: totalPortfolioValue, // Przekazanie wartości
+          currentPortfolioValue: currentPortfolioValue,
+        ),
         SettingsPage(
           loggedInUser: FirebaseAuth.instance.currentUser?.email ?? 'Guest',
         ),
@@ -63,20 +65,20 @@ class _HomePageState extends State<HomePage> {
             },
             tabs: const [
               GButton(
-                icon: Icons.home,
-                text: 'Home',
+                icon: Icons.add,
+                text: 'Dodaj',
               ),
               GButton(
                 icon: Icons.account_balance_wallet_sharp,
-                text: 'Portfolio',
+                text: 'Portfel',
               ),
               GButton(
                 icon: Icons.pie_chart,
-                text: 'Charts',
+                text: 'Wykres',
               ),
               GButton(
                 icon: Icons.settings_sharp,
-                text: 'Settings',
+                text: 'Ustawienia',
               ),
             ],
           ),
@@ -90,10 +92,12 @@ class _HomePageState extends State<HomePage> {
                       _selectedIndex = 0; // Przejdź na stronę AddInvestmentPage
                     });
                   },
-                  backgroundColor: Colors.lightBlue,
+                  backgroundColor: Colors.lightBlue, // Kolor tła
+                  foregroundColor: Colors.deepOrange[300], // Kolor ikony
                   child: const Icon(Icons.add),
                 )
               : null, // Brak przycisku na innych stronach
+      // Brak przycisku na innych stronach
     );
   }
 }
