@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_asset_wallet/components/button.dart';
@@ -7,7 +6,6 @@ import 'package:flutter_asset_wallet/components/textfield.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_asset_wallet/main.dart';
 import 'package:flutter_asset_wallet/services/auth_service.dart';
-import 'package:flutter_asset_wallet/services/firebase_service.dart';
 
 class RegisterPage extends StatefulWidget {
   final Function()? onTap;
@@ -218,17 +216,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   height: 30,
                 ),
 
-                // Google and Apple buttons
+                // Google and button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SquareBox(
                         onTap: () => AuthService().signInWithGoogle(),
                         imagePath: 'lib/images/google_logo.png'),
-                    SizedBox(width: 35),
-                    SquareBox(
-                        onTap: () => (),
-                        imagePath: 'lib/images/apple_logo.png'),
                   ],
                 ),
                 const SizedBox(

@@ -19,7 +19,7 @@ class SettingsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You are logged in as: $loggedInUser',
+              'Jesteś zalogowany jako: $loggedInUser',
               style: TextStyle(fontSize: 18),
             ),
             SizedBox(height: 20),

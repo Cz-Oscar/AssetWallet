@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_asset_wallet/pages/home_page.dart';
 import 'package:flutter_asset_wallet/pages/login_or_register_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -37,33 +38,36 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await initializeNotifications(); // Inicjalizacja powiadomień
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode
+      .immersiveSticky); // usuniecie paska z bateria i godzina do screenshotow
+
   runApp(const MyApp());
-  print("Testowe powiadomienie jest gotowe do wysłania");
+  // print("Testowe powiadomienie jest gotowe do wysłania");
 
   // Wyślij testowe powiadomienie po starcie aplikacji
-  Future.delayed(const Duration(seconds: 5), () {
-    print("Wysyłam testowe powiadomienie...");
+  // Future.delayed(const Duration(seconds: 80), () {
+  //   // print("Wysyłam testowe powiadomienie...");
 
-    flutterLocalNotificationsPlugin.show(
-      0,
-      'Test Powiadomienia',
-      'To jest testowe powiadomienie!',
-      NotificationDetails(
-        iOS: DarwinNotificationDetails(
-          presentAlert: true, // Pokazuje powiadomienie
-          presentBadge: true, // Aktualizuje badge aplikacji
-          presentSound: true, // Odgrywa dźwięk
-        ), // Powiadomienia dla iOS
-      ),
-    );
-    print("Powiadomienie zostało wysłane");
-  });
+  //   flutterLocalNotificationsPlugin.show(
+  //     0,
+  //     'Test Powiadomienia',
+  //     'To jest testowe powiadomienie!',
+  //     NotificationDetails(
+  //       iOS: DarwinNotificationDetails(
+  //         presentAlert: true, // Pokazuje powiadomienie
+  //         presentBadge: true, // Aktualizuje badge aplikacji
+  //         presentSound: true, // Odgrywa dźwięk
+  //       ), // Powiadomienia dla iOS
+  //     ),
+  //   );
+  //   // print("Powiadomienie zostało wysłane");
+  // });
 }
 
 void startNotificationCheck(String userId) {
   print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
 
-  Timer.periodic(const Duration(seconds: 10), (timer) {
+  Timer.periodic(const Duration(seconds: 70), (timer) {
     print("Sprawdzanie powiadomień dla $userId...");
 
     checkPortfolioChange(userId);

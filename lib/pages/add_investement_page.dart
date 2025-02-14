@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -139,6 +138,8 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           'default_value': 0.0, // Domyślna wartość
         });
       } else {
+        Map<String, dynamic> userData = userSnapshot.data() ?? {};
+
         // Jeśli dokument już istnieje, zaktualizuj pole `lastActiveAt`
         print('Aktualizowanie lastActiveAt...');
         await userDoc.update({
@@ -241,6 +242,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dodaj Inwestycję'),
+        backgroundColor: Colors.lightBlue,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -273,8 +275,37 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _addInvestmentToFirestore,
-                      child: Text("Dodaj inwestycję do portfela"),
-                    ),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                            vertical: 16.0, horizontal: 24.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(30.0), // Zaokrąglone rogi
+                        ),
+                        backgroundColor:
+                            Colors.lightBlue, // Dopasowany kolor do nav bara
+                        elevation: 5, // Efekt cienia
+                        shadowColor: Colors.black54,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add,
+                              color: Colors.deepOrange[
+                                  300]), // Dopasowany pomarańczowy kolor
+                          SizedBox(width: 8),
+                          Text(
+                            "Dodaj inwestycję do portfela",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.deepOrange[
+                                  300], // Dopasowany pomarańczowy kolor
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
@@ -576,7 +607,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           child: Text(
             _selectedDate != null
                 ? 'Wybrana data: ${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}'
-                : 'Wybierz datę inwestycji',
+                : 'Wybierz datę inwestycji:',
             style: TextStyle(fontSize: 16),
           ),
         ),
