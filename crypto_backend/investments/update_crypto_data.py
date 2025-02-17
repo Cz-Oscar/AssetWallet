@@ -9,9 +9,6 @@ import requests
 import pytz  # Do obsługi stref czasowych
 import time
 
-# Licznik iteracji do testów
-iteration_count = 0
-max_iterations = 3  # Maksymalna liczba wywołań funkcji
 
 # Inicjalizacja Firebase
 cred = credentials.Certificate("credentials/firebase-key.json")
@@ -25,8 +22,6 @@ def update_crypto_data():
     """
     Aktualizuje dane portfolio w Firestore.
     """
-    global iteration_count
-    iteration_count += 1
 
     # Oblicz czas sprzed 24 godzin
     now = datetime.now(pytz.UTC)  # Obecny czas w UTC
@@ -46,6 +41,9 @@ def update_crypto_data():
         # Oblicz nową wartość portfolio wg ceny rynkowej
         new_value = calculate_portfolio_value(user_id)
         if new_value == 0:
+            default_value = user_data.get(
+                'default_value', 0)  # Dodaj inicjalizację!
+
             print(
                 f"[DEBUG] Wartość portfela użytkownika {user_id} wynosi 0. Resetuję flagę.")
             db.collection('users').document(user_id).update({
@@ -98,11 +96,6 @@ def update_crypto_data():
             })
 
         print(f"Zaktualizowano dane dla użytkownika {user_id}: {new_value}")
-
-    if iteration_count >= max_iterations:
-        print(
-            "[INFO] Osiągnięto maksymalną liczbę wywołań. Zatrzymywanie harmonogramu...")
-        scheduler.shutdown()
 
 
 # Funkcja obliczająca wartość portfolio
