@@ -42,26 +42,6 @@ void main() async {
       .immersiveSticky); // usuniecie paska z bateria i godzina do screenshotow
 
   runApp(const MyApp());
-  // print("Testowe powiadomienie jest gotowe do wysłania");
-
-  // Wyślij testowe powiadomienie po starcie aplikacji
-  // Future.delayed(const Duration(seconds: 80), () {
-  //   // print("Wysyłam testowe powiadomienie...");
-
-  //   flutterLocalNotificationsPlugin.show(
-  //     0,
-  //     'Test Powiadomienia',
-  //     'To jest testowe powiadomienie!',
-  //     NotificationDetails(
-  //       iOS: DarwinNotificationDetails(
-  //         presentAlert: true, // Pokazuje powiadomienie
-  //         presentBadge: true, // Aktualizuje badge aplikacji
-  //         presentSound: true, // Odgrywa dźwięk
-  //       ), // Powiadomienia dla iOS
-  //     ),
-  //   );
-  //   // print("Powiadomienie zostało wysłane");
-  // });
 }
 
 void startNotificationCheck(String userId) {
