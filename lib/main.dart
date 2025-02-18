@@ -48,7 +48,7 @@ void startNotificationCheck(String userId) {
   // print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
 
   Timer.periodic(const Duration(seconds: 70), (timer) {
-    // print("Sprawdzanie powiadomień dla $userId...");
+    print("Sprawdzanie powiadomień dla $userId...");
 
     checkPortfolioChange(userId);
   });
