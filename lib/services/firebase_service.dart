@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -23,7 +22,7 @@ class FirebaseService {
       if (doc.exists) {
         final data = doc.data()!;
         final List<dynamic> rawData = data['data'];
-        print("Pobrano dane z Firebase: $documentId");
+        // print("Pobrano dane z Firebase: $documentId");
         return rawData.cast<Map<String, dynamic>>();
       }
       print("Dokument $documentId nie istnieje w Firebase");

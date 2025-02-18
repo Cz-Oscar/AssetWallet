@@ -21,11 +21,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
-  // Stałe dla odstępów
-  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
-  final double iconSize = 70.0; // Rozmiar ikonki kłódki
-  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
-  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+  // padding
+  final double iconTopPadding = 10.0;
+  final double iconSize = 70.0;
+  final double titlePadding = 40.0;
+  final double formStartPadding = 50.0;
 
   // bold white style for Log in
   final TextStyle boldTextStyle = TextStyle(
@@ -45,7 +45,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = usernameController.text.trim();
     final password = passwordController.text.trim();
 
-    // Wyświetl ekran ładowania
+    // show loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -57,44 +57,33 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     try {
-      // Sprawdź, czy hasła są identyczne
+      // passwords are equal
       if (passwordController.text != confirmPasswordController.text) {
-        if (mounted) Navigator.pop(context); // Zamknij ekran ładowania
+        if (mounted) Navigator.pop(context); //close loading screen
         showErrorMessage('Passwords do not match');
         return;
       }
 
-      // Zarejestruj użytkownika
+      // user register
       UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Pobierz UID użytkownika
+      //uid user
       final userId = userCredential.user?.uid ?? '';
 
       if (userId.isNotEmpty) {
-        // Rozpocznij sprawdzanie powiadomień
+        // start notification check
         startNotificationCheck(userId);
       }
-
-      // Zapisz dane użytkownika w Firestore
-      // if (userId != null) {
-      //   await FirebaseFirestore.instance.collection('users').doc(userId).set({
-      //     'email': email,
-      //     'createdAt': DateTime.now(),
-      //   });
-      // }
-
-      // Zamknij ekran ładowania po sukcesie
+      // close loading screen
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
-      // Zamknij ekran ładowania i wyświetl komunikat o błędzie
       if (mounted) Navigator.pop(context);
       showErrorMessage(e.code);
     } catch (e) {
-      // Zamknij ekran ładowania i wyświetl komunikat o nieoczekiwanym błędzie
       if (mounted) Navigator.pop(context);
       showErrorMessage('Unexpected error occurred');
     }
@@ -127,9 +116,9 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: iconTopPadding), // Odstęp na górze
-                Icon(Icons.lock, size: iconSize), // Ikona
-                SizedBox(height: titlePadding), // Odstęp pod ikoną
+                SizedBox(height: iconTopPadding), 
+                Icon(Icons.lock, size: iconSize),
+                SizedBox(height: titlePadding), 
                 // Register message
                 const Text(
                   'Create account!',

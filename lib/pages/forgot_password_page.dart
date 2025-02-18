@@ -13,11 +13,11 @@ class ForgotPasswordPage extends StatefulWidget {
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final emailController = TextEditingController();
 
-  // Stałe dla odstępów
-  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
-  final double iconSize = 70.0; // Rozmiar ikonki kłódki
-  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
-  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+  // padding
+  final double iconTopPadding = 10.0; 
+  final double iconSize = 70.0; 
+  final double titlePadding = 40.0; 
+  final double formStartPadding = 50.0; 
 
   final TextStyle boldTextStyle = const TextStyle(
     color: Colors.white,
@@ -30,7 +30,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     fontSize: 15,
   );
 
-  // Funkcja resetowania hasła
+  // password reset
   void resetPassword() async {
     final email = emailController.text.trim();
 
@@ -90,9 +90,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: iconTopPadding), // Odstęp na górze
-                Icon(Icons.lock, size: iconSize), // Ikona
-                SizedBox(height: titlePadding), // Odstęp pod ikoną
+                SizedBox(height: iconTopPadding), 
+                Icon(Icons.lock, size: iconSize), 
+                SizedBox(height: titlePadding), 
                 const Text(
                   'Reset Password',
                   style: TextStyle(
@@ -101,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                SizedBox(height: formStartPadding), // Odstęp do formularza
+                SizedBox(height: formStartPadding), 
 
                 // Email input
                 MyTextField(
@@ -119,7 +119,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                 const SizedBox(height: 50),
 
-                // Powrót do logowania
+                // back to login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

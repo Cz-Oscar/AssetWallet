@@ -20,11 +20,11 @@ class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Stałe dla odstępów
-  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
-  final double iconSize = 70.0; // Rozmiar ikonki kłódki
-  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
-  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+
+  final double iconTopPadding = 10.0; 
+  final double iconSize = 70.0; 
+  final double titlePadding = 40.0; 
+  final double formStartPadding = 50.0; 
 
   // bold white style for register and forgot password?
   final TextStyle boldTextStyle = TextStyle(
@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     fontWeight: FontWeight.bold,
   );
 
-  // black style for rest
+  // black style for the rest
   final TextStyle blackTextStyle = TextStyle(
     color: Colors.black,
     fontSize: 15,
@@ -58,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     // try login
 
     try {
-      // Logowanie użytkownika
+      // user login
       UserCredential userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
@@ -67,7 +67,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final userId = userCredential.user?.uid;
       if (userId != null) {
-        // Aktualizacja lastActiveAt w tle
+        // updating lastActiveAt
         FirebaseFirestore.instance.collection('users').doc(userId).update({
           'lastActiveAt': FieldValue.serverTimestamp(),
         }).catchError((error) {
@@ -114,10 +114,9 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: iconTopPadding), // odstep na gorze
-                Icon(Icons.lock, size: iconSize), // Ikona
-                // SizedBox(height: iconSize), // ikona
-                SizedBox(height: titlePadding), // odstep pod ikona
+                SizedBox(height: iconTopPadding), 
+                Icon(Icons.lock, size: iconSize),
+                SizedBox(height: titlePadding),
                 // Welcome message
                 const Text(
                   'Welcome back!',
@@ -127,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 SizedBox(
-                  height: formStartPadding, // odstep od pol tekstowych
+                  height: formStartPadding,
                 ),
 
                 // Username or email field
