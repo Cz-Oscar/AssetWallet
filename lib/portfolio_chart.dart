@@ -18,7 +18,7 @@ class PortfolioChart extends StatelessWidget {
       );
     }
 
-    // Pobierz minimalną i maksymalną wartość w danych
+// Retrieve the minimum and maximum value in the data
     final minValue = chartData
         .map((data) => data.userValue)
         .followedBy(chartData.map((data) => data.marketValue))
@@ -29,12 +29,10 @@ class PortfolioChart extends StatelessWidget {
         .followedBy(chartData.map((data) => data.marketValue))
         .reduce((a, b) => a > b ? a : b);
 
-    // Oblicz dynamiczny zakres wartości i dostosowanie interwału
+// Calculate the dynamic value range and adjust the interval
     final range = maxValue - minValue;
-    final adjustedMinY =
-        (minValue - range * 0.1).floorToDouble(); // Zaokrąglenie w dół
-    final adjustedMaxY =
-        (maxValue + range * 0.1).ceilToDouble(); // Zaokrąglenie w górę
+    final adjustedMinY = (minValue - range * 0.1).floorToDouble();
+    final adjustedMaxY = (maxValue + range * 0.1).ceilToDouble();
     final interval = ((adjustedMaxY - adjustedMinY) / 5).ceilToDouble();
 
     return Container(
@@ -56,14 +54,13 @@ class PortfolioChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 50,
-                interval: interval, // Dynamiczny interwał
+                interval: interval,
                 getTitlesWidget: (value, meta) {
                   if (value == adjustedMinY || value == adjustedMaxY) {
-                    return Container(); // Nie wyświetlaj wartości
+                    return Container();
                   }
-
                   return Text(
-                    '\$${value.toStringAsFixed(0)}', // Zaokrąglona wartość
+                    '\$${value.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -89,7 +86,7 @@ class PortfolioChart extends StatelessWidget {
                   if (value < 0 || value >= chartData.length)
                     return Container();
 
-                  // Pobierz unikalne daty jako indeksy osi X
+// Retrieve unique dates as X-axis indices
                   final DateTime date = chartData[value.toInt()].date;
                   String formattedDate = '${date.day}/${date.month}';
 
@@ -111,7 +108,7 @@ class PortfolioChart extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             horizontalInterval:
-                interval, // Dynamiczna siatka dopasowana do interwału
+                interval, // Dynamic grid adjusted to the interval
           ),
           borderData: FlBorderData(
             show: true,
@@ -157,8 +154,8 @@ class PortfolioChart extends StatelessWidget {
           ],
           minX: 0,
           maxX: (chartData.length - 1).toDouble(),
-          minY: adjustedMinY, // Dynamiczny zakres
-          maxY: adjustedMaxY, // Dynamiczny zakres
+          minY: adjustedMinY, // Dynamic range
+          maxY: adjustedMaxY, // Dynamic range
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
               tooltipPadding: const EdgeInsets.all(8),

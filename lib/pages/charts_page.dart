@@ -29,8 +29,8 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   Future<void> _fetchChartData() async {
-    print(
-        "📊 Otrzymane wartości w ChartsPage: total=${widget.totalPortfolioValue}, current=${widget.currentPortfolioValue}");
+    // print(
+    //     "📊 Otrzymane wartości w ChartsPage: total=${widget.totalPortfolioValue}, current=${widget.currentPortfolioValue}");
 
     setState(() => isLoading = true);
 
@@ -53,15 +53,15 @@ class _ChartsPageState extends State<ChartsPage> {
           .cast<String>()
           .toList();
 
-      // Pobierz historyczne ceny kryptowalut
+      // download historical prices
       final historicalPrices =
           await ApiService().getHistoricalPricesWithFirebase(uid, ids, 7);
 
-      // Pobierz aktualne ceny kryptowalut
+      // download actual cryptocurrency
       final prices = await ApiService().getCurrentPrices(ids);
-      print("🔥 Aktualne ceny w charts_page: $prices");
+      // print("🔥 Aktualne ceny w charts_page: $prices");
 
-      // Wypełnij dane wykresu (ostatnie 6 dni)
+      // fill chart
       chartData.clear();
       for (int i = 0; i < 6; i++) {
         DateTime dateForDay = DateTime.now().subtract(Duration(days: 6 - i));
@@ -90,23 +90,20 @@ class _ChartsPageState extends State<ChartsPage> {
         chartData
             .add(PortfolioData(dateForDay, dailyUserValue, dailyMarketValue));
       }
-
-      // 📌 Dodaj dzisiejszą wartość jako ostatni punkt na wykresie
       DateTime today = DateTime.now();
       double todayUserValue = widget.totalPortfolioValue;
       double todayMarketValue = widget.currentPortfolioValue;
 
-      // Usuń stare wartości z dzisiejszą datą, jeśli istnieją
       chartData.removeWhere((data) =>
           data.date.day == DateTime.now().day &&
           data.date.month == DateTime.now().month &&
           data.date.year == DateTime.now().year);
 
-      // ✅ Dodaj dzisiejszą wartość na końcu wykresu
+      // add today's date
       chartData.add(PortfolioData(today, todayUserValue, todayMarketValue));
 
-      print("🔥 Poprawione dane wykresu (ostatni dzień): ${chartData.last}");
-      print("📅 Daty w chartData:");
+      // print("🔥 Poprawione dane wykresu (ostatni dzień): ${chartData.last}");
+      // print("📅 Daty w chartData:");
       for (var data in chartData) {
         print("${data.date}");
       }

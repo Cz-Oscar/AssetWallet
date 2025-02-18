@@ -37,18 +37,18 @@ Future<void> initializeNotifications() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await initializeNotifications(); // Inicjalizacja powiadomień
+  await initializeNotifications(); // Initialize notifications
   SystemChrome.setEnabledSystemUIMode(SystemUiMode
-      .immersiveSticky); // usuniecie paska z bateria i godzina do screenshotow
+      .immersiveSticky); // Remove the status bar with battery and time for screenshots
 
   runApp(const MyApp());
 }
 
 void startNotificationCheck(String userId) {
-  print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
+  // print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
 
   Timer.periodic(const Duration(seconds: 70), (timer) {
-    print("Sprawdzanie powiadomień dla $userId...");
+    // print("Sprawdzanie powiadomień dla $userId...");
 
     checkPortfolioChange(userId);
   });
@@ -75,8 +75,7 @@ class AuthStateHandler extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          startNotificationCheck(
-              snapshot.data!.uid); // Uruchom ponownie funkcję
+          startNotificationCheck(snapshot.data!.uid); // Restart the function
           return HomePage();
         } else {
           return const LoginOrRegisterPage();

@@ -14,10 +14,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 0; // Aktualny indeks wybranej zakładki
+  int _selectedIndex = 0; // index
 
-  double totalPortfolioValue = 0.0; // Wartość portfela wg zakupu
-  double currentPortfolioValue = 0.0; // Wartość portfela wg rynku
+  double totalPortfolioValue = 0.0; // user's value
+  double currentPortfolioValue = 0.0; // actual value
   
 
   void updatePortfolioValues(double totalValue, double currentValue) {
@@ -30,10 +30,10 @@ class _HomePageState extends State<HomePage> {
   List<Widget> get _pages => [
         AddInvestmentPage(),
         PortfolioPage(
-          onValuesCalculated: updatePortfolioValues, // Przekazanie callbacku
+          onValuesCalculated: updatePortfolioValues, // callback
         ),
         ChartsPage(
-          totalPortfolioValue: totalPortfolioValue, // Przekazanie wartości
+          totalPortfolioValue: totalPortfolioValue,
           currentPortfolioValue: currentPortfolioValue,
         ),
         SettingsPage(
@@ -85,19 +85,18 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton:
-          _selectedIndex == 1 // Pokazuj tylko na PortfolioPage
+          _selectedIndex == 1 // only on PortfolioPage
               ? FloatingActionButton(
                   onPressed: () {
                     setState(() {
-                      _selectedIndex = 0; // Przejdź na stronę AddInvestmentPage
+                      _selectedIndex = 0; // come to AddInvestmentPage
                     });
                   },
-                  backgroundColor: Colors.lightBlue, // Kolor tła
-                  foregroundColor: Colors.deepOrange[300], // Kolor ikony
+                  backgroundColor: Colors.lightBlue,
+                  foregroundColor: Colors.deepOrange[300], 
                   child: const Icon(Icons.add),
                 )
-              : null, // Brak przycisku na innych stronach
-      // Brak przycisku na innych stronach
+              : null, //no buttons on other sites
     );
   }
 }

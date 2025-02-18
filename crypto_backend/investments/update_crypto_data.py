@@ -6,16 +6,16 @@ from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta
 import firebase_admin
 import requests
-import pytz  # Do obsługi stref czasowych
+import pytz  # For handling time zones
 import time
 
 
-# Inicjalizacja Firebase
+# Firebase Initialization
 cred = credentials.Certificate("credentials/firebase-key.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# Funkcja do aktualizowania danych portfolio
+# Function for updating portfolio data
 
 
 def update_crypto_data():
@@ -23,82 +23,81 @@ def update_crypto_data():
     Aktualizuje dane portfolio w Firestore.
     """
 
-    # Oblicz czas sprzed 24 godzin
-    now = datetime.now(pytz.UTC)  # Obecny czas w UTC
-    one_day_ago = now - timedelta(days=1)  # Czas sprzed 24 godzin
+   # Calculate the time 24 hours ago
+    now = datetime.now(pytz.UTC)  # Current time in UTC
+    one_day_ago = now - timedelta(days=1)  # Time 24 hours ago
 
-    print("rozpoczeto aktualizacje danych portifolio")
+    # print("rozpoczeto aktualizacje danych portifolio")
 
     users = db.collection('users').where(
         'lastActiveAt', '>=', one_day_ago).stream()
 
     for user in users:
         user_id = user.id
-        print(f"Przetwarzanie użytkownika: {user_id}")
+        # print(f"Przetwarzanie użytkownika: {user_id}")
 
         user_data = user.to_dict()
 
-        # Oblicz nową wartość portfolio wg ceny rynkowej
+# Calculate the new portfolio value based on market price
         new_value = calculate_portfolio_value(user_id)
         if new_value == 0:
             default_value = user_data.get(
-                'default_value', 0)  # Dodaj inicjalizację!
+                'default_value', 0)  # Add initialization!
 
-            print(
-                f"[DEBUG] Wartość portfela użytkownika {user_id} wynosi 0. Resetuję flagę.")
+            # print(
+            # f"[DEBUG] Wartość portfela użytkownika {user_id} wynosi 0. Resetuję flagę.")
             db.collection('users').document(user_id).update({
                 'significant_change': False,
-                'current_value': 0,  # Zapisz bieżącą wartość
+                'current_value': 0,  # Save the current value
                 # Upewnij się, że nie jest 0
                 'notification_base_value': default_value if default_value > 0 else 0,
             })
-            continue  # Pomijamy dalsze obliczenia
+            continue  # Skip further calculations
 
         notification_base_value = user_data.get(
             'notification_base_value', user_data.get('default_value', 0))
         default_value = user_data.get('default_value', 0)
 
-        # Pomijamy użytkowników bez inwestycji lub bazowej wartości
+# Skip users without investments or base value
         if notification_base_value == 0:
             notification_base_value = default_value if default_value > 0 else new_value
             if notification_base_value == 0:
-                print(
-                    f"[DEBUG] Użytkownik {user_id} nie ma żadnej wartości bazowej. Pomijam.")
+                # print(
+                #     f"[DEBUG] Użytkownik {user_id} nie ma żadnej wartości bazowej. Pomijam.")
                 db.collection('users').document(user_id).update({
-                    'current_value': new_value,  # Zapisz bieżącą wartość
-                    'significant_change': False,  # Resetuj flagę
+                    'current_value': new_value,  # Save the current value
+                    'significant_change': False,  # Reset the flag
                 })
                 continue
 
-        # Oblicz zmianę procentową względem `notification_base_value`
+# Calculate percentage change relative to `notification_base_value`
         change_percent = (new_value - notification_base_value) / \
             notification_base_value * 100
 
-        # Sprawdź, czy zmiana przekroczyła próg ±5%
+# Check if the change exceeded the ±5% threshold
         if abs(change_percent) >= 5:
             print(
                 f"Zmiana przekroczyła próg ±5% dla użytkownika {user_id}: {change_percent:.2f}%")
 
-            # Wyślij powiadomienie (przy użyciu istniejącej logiki w frontendzie)
             db.collection('users').document(user_id).update({
-                'significant_change': True,  # Frontend obsłuży powiadomienie
-                'notification_base_value': new_value,  # Przesuń próg na nową wartość
+                'significant_change': True,
+                'notification_base_value': new_value,  # Shift threshold to new value
                 'current_value': new_value,
-                'change_percent': change_percent,  # Dodajemy zmianę procentową
+                'change_percent': change_percent,  # Add percentage change
 
-                'lastActiveAt': now,  # Aktualizuj aktywność
+                'lastActiveAt': now,  # Update activity timestamp
             })
         else:
-            # Zaktualizuj tylko bieżącą wartość, bez zmiany progu
+            # Update only the current value without changing the threshold
             db.collection('users').document(user_id).update({
                 'current_value': new_value,
                 'significant_change': False,  # Resetuj flagę
             })
 
-        print(f"Zaktualizowano dane dla użytkownika {user_id}: {new_value}")
+        # print(f"Zaktualizowano dane dla użytkownika {user_id}: {new_value}")
 
 
-# Funkcja obliczająca wartość portfolio
+# Function to calculate portfolio value
 
 
 def calculate_default_portfolio_value(user_id):
@@ -106,7 +105,6 @@ def calculate_default_portfolio_value(user_id):
     Oblicza default_value (wartość portfela wg zakupu) dla użytkownika.
     """
     try:
-        # Pobierz inwestycje użytkownika
         user_doc = db.collection('users').document(user_id)
         investments = user_doc.collection('investments').stream()
 
@@ -116,7 +114,7 @@ def calculate_default_portfolio_value(user_id):
             price = inv_data.get('price', 0.0)
             amount = inv_data.get('amount', 0.0)
 
-            # Oblicz wartość (price * amount) i dodaj do całkowitej wartości
+# Calculate value (price * amount) and add to total value
             total_value += price * amount
 
         return total_value
@@ -132,13 +130,13 @@ def calculate_portfolio_value(user_id):
     """
     investments = get_user_investments(user_id)
     if not investments:
-        print(f"[DEBUG] Brak inwestycji dla użytkownika {user_id}")
+        # print(f"[DEBUG] Brak inwestycji dla użytkownika {user_id}")
         return 0
 
     ids = [inv.get('id') for inv in investments if inv.get('id')]
     current_prices = get_current_prices(ids)
 
-    print(f"[DEBUG] Aktualne ceny: {current_prices}")
+    # print(f"[DEBUG] Aktualne ceny: {current_prices}")
 
     total_value = 0
     for inv in investments:
@@ -147,7 +145,7 @@ def calculate_portfolio_value(user_id):
         amount = inv.get('amount', 0)
 
         # Debugowanie dla każdej inwestycji
-        print(f"[DEBUG] Przetwarzanie: symbol={crypto_id}, amount={amount}")
+        # print(f"[DEBUG] Przetwarzanie: symbol={crypto_id}, amount={amount}")
 
         price = current_prices.get(crypto_id, 0)
         if price == 0:
@@ -162,20 +160,20 @@ def calculate_portfolio_value(user_id):
     return total_value
 
 
-# Pobieranie inwestycji użytkownika
+# Fetch user investments
 
 
 def get_user_investments(user_id):
     """
-    Pobiera inwestycje użytkownika z Firestore.
+    Retrieves user investments from Firestore.
     """
     try:
-        # Pobierz referencję do dokumentu użytkownika
+        # Get a reference to the user document
         user_doc = db.collection('users').document(user_id)
-        # Pobierz wszystkie dokumenty z kolekcji 'investments'
+        # Retrieve all documents from the 'investments' collection
         investments = user_doc.collection('investments').stream()
 
-        # Przekształć dane każdego dokumentu na słownik i zwróć listę inwestycji
+        # Convert each document to a dictionary and return the list of investments
         return [inv.to_dict() for inv in investments]
     except Exception as e:
         print(f"Błąd podczas pobierania inwestycji dla użytkownika {
@@ -183,7 +181,7 @@ def get_user_investments(user_id):
         return []
 
 
-# Pobieranie cen kryptowalut
+# Fetch cryptocurrency prices
 
 
 def get_current_prices(ids):
@@ -201,12 +199,12 @@ def get_current_prices(ids):
         return {}
 
 
-# Uruchom harmonogram
+# Start scheduler
 scheduler = BackgroundScheduler()
 scheduler.add_job(update_crypto_data, 'interval', minutes=1, max_instances=1)
 scheduler.start()
 
-# Utrzymaj proces aktywny
+# Keep process running
 try:
     while True:
         time.sleep(1)
