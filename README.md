@@ -18,31 +18,34 @@
 
 ### 🔐 Ekran logowania i rejestracji
 Użytkownik może zalogować się za pomocą adresu e-mail i hasła lub skorzystać z logowania Google.
-![Ekran logowania](screenshots/ekran_logowania.png)
+<img src="screenshots/ekran_logowania.png" alt="Ekran logowania" height="750"/>
 
 ---
 
 ### 📊 Ekran inwestycji  
 Użytkownik może dodać inwestycję, podając kryptowalutę, giełdę, cenę zakupu ilość oraz datę.  
-![Ekran inwestycji](screenshots/ekran_inwestycji_pelny.png)
+<img src="screenshots/ekran_inwestycji_pelny.png" alt="Ekran inwestycji" height="750"/>
+
 
 ---
 
 ### 📊 Monitorowanie wartości portfela  
 Widok ekranu portfela po dodaniu inwestycji – pokazuje aktualną wartość oraz historię zmian.  
-![Ekran portfela](screenshots/ekran_portfela_after.png)
+<img src="screenshots/ekran_portfela_after.png" alt="Ekran portfela" height="750"/>
+
 
 ---
 
 ### 📈 Analiza zmian wartości portfela  
 Aplikacja oferuje wykres pokazujący zmiany wartości portfela w czasie.  
-![Wykres wartości portfela](screenshots/wykres_after.png)
+<img src="screenshots/wykres_after.png" alt="Ekran wykresu" height="750"/>
+
 
 ---
 
 ### 🔔 Powiadomienia o zmianach wartości portfela  
 Gdy wartość portfela zmienia się o więcej niż 5%, użytkownik otrzymuje powiadomienie push.  
-![Powiadomienie o wzroście wartości](screenshots/powiadomienie_plus.png)
+<img src="screenshots/powiadomienie_plus.png" alt="Powiadomienie o wzroście wartości" width= "800" height="150"/>
 
 
 ---
