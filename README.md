@@ -14,12 +14,36 @@
 
 ---
 
-## 📷 Zrzuty ekranu
-<p align="center">
-  <img src="screenshots/screen1.png" width="250">
-  <img src="screenshots/screen2.png" width="250">
-  <img src="screenshots/screen3.png" width="250">
-</p>
+## 📸 Zrzuty ekranu
+
+### 🔐 Ekran logowania i rejestracji
+Użytkownik może zalogować się za pomocą adresu e-mail i hasła lub skorzystać z logowania Google.
+![Ekran logowania](screenshots/ekran_logowania.png)
+
+---
+
+### 📊 Ekran inwestycji  
+Użytkownik może dodać inwestycję, podając kryptowalutę, giełdę, cenę zakupu ilość oraz datę.  
+![Ekran inwestycji](screenshots/ekran_inwestycji_pelny.png)
+
+---
+
+### 📊 Monitorowanie wartości portfela  
+Widok ekranu portfela po dodaniu inwestycji – pokazuje aktualną wartość oraz historię zmian.  
+![Ekran portfela](screenshots/ekran_portfela_after.png)
+
+---
+
+### 📈 Analiza zmian wartości portfela  
+Aplikacja oferuje wykres pokazujący zmiany wartości portfela w czasie.  
+![Wykres wartości portfela](screenshots/wykres_after.png)
+
+---
+
+### 🔔 Powiadomienia o zmianach wartości portfela  
+Gdy wartość portfela zmienia się o więcej niż 5%, użytkownik otrzymuje powiadomienie push.  
+![Powiadomienie o wzroście wartości](screenshots/powiadomienie_plus.png)
+
 
 ---
 
@@ -62,6 +86,11 @@ flutter run
 ```
 cd crypto_backend
 python3 manage.py runserver
+```
+🖥 Uruchomienie aktualizacji wartości portfela (wymagane do działania powiadomień):
+```
+cd crypto_backend/investments
+python3 update_crypto_data.py
 ```
 Autor
 👤 **Oscar Czempiel**  
