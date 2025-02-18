@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import '../services/api_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
@@ -67,12 +66,12 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       final match = assets.firstWhere(
         (asset) =>
             asset['symbol'].toString().toLowerCase() == symbol.toLowerCase(),
-        orElse: () => {}, // Zwraca pustą mapę zamiast null
+        orElse: () => {}, // Returns an empty map instead of null
       );
 
       return match.isNotEmpty
           ? match['id']?.toString()
-          : null; // Sprawdza, czy mapa nie jest pusta
+          : null; // Checks if the map is not empty
     } catch (e) {
       print("Błąd podczas pobierania ID kryptowaluty: $e");
       return null;
@@ -82,6 +81,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
   Future<void> _addInvestmentToFirestore() async {
     FocusScope.of(context).unfocus();
 
+// Verify if all fields are filled
     if (_selectedAsset == null ||
         _cryptoController.text.isEmpty ||
         _selectedExchange == null ||
@@ -102,13 +102,13 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       return;
     }
 
-    // Pobranie ID kryptowaluty na podstawie symbolu
+// Retrieve the cryptocurrency ID based on the symbol
     final String symbol = _cryptoController.text.toLowerCase();
-    print("Zawartość _allAssets: ${_allAssets.take(10)}");
+    // print("Zawartość _allAssets: ${_allAssets.take(10)}");
 
     final selectedCrypto = _allAssets.firstWhere(
       (crypto) => crypto['symbol']?.toLowerCase() == symbol,
-      orElse: () => {}, // Zwraca pustą mapę, jeśli brak dopasowania
+      orElse: () => {}, // Returns an empty map if no match is found
     );
 
     if (selectedCrypto.isEmpty) {
@@ -123,42 +123,46 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
 
     final cryptoId = selectedCrypto['id'] ?? 'unknown';
 
-    // Logowanie dla debugowania
-    print("Symbol: $symbol, ID: $cryptoId");
-    print({
-      'asset': _selectedAsset,
-      'symbol': _cryptoController.text,
-      'id': cryptoId, // Powinno być prawidłowe ID
-      'exchange': _selectedExchange,
-      'price': double.tryParse(_priceController.text) ?? 0.0,
-      'amount': double.tryParse(_amountController.text) ?? 0.0,
-      'date': Timestamp.fromDate(_selectedDate!),
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
     try {
       final userDoc =
           FirebaseFirestore.instance.collection('users').doc(user.uid);
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('investments')
-          .add({
+// Check if the user document exists
+      final userSnapshot = await userDoc.get();
+      if (!userSnapshot.exists) {
+        print('Dokument użytkownika nie istnieje. Tworzenie nowego...');
+        await userDoc.set({
+          'email': user.email,
+          'lastActiveAt': FieldValue.serverTimestamp(), // Set lastActiveAt
+          'default_value': 0.0, // Default value
+        });
+      } else {
+        Map<String, dynamic> userData = userSnapshot.data() ?? {};
+
+// If the document already exists, update the `lastActiveAt` field
+        // print('Aktualizowanie lastActiveAt...');
+        await userDoc.update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
+        });
+      }
+      // add investment to Firestore
+      final investmentData = {
         'asset': _selectedAsset,
         'symbol': _cryptoController.text,
-        'id': cryptoId, // Zapisujemy ID
+        'id': cryptoId, // save ID
         'exchange': _selectedExchange,
         'price': double.tryParse(_priceController.text) ?? 0.0,
         'amount': double.tryParse(_amountController.text) ?? 0.0,
         'date': Timestamp.fromDate(_selectedDate!),
         'timestamp': FieldValue.serverTimestamp(),
-      });
-      // Sprawdź, czy `default_value` istnieje w Firestore
-      final userSnapshot = await userDoc.get();
+      };
+
+      await userDoc.collection('investments').add(investmentData);
+      // print("Dodano inwestycję i zaktualizowano lastActiveAt.");
+
+// Check and update `default_value` if it does not exist
       if (!userSnapshot.exists ||
           userSnapshot.data()?['default_value'] == null) {
-        // Oblicz default_value jako suma (price * amount) wszystkich inwestycji
         double defaultValue = 0.0;
 
         QuerySnapshot investmentsSnapshot =
@@ -171,22 +175,26 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           defaultValue += price * amount;
         }
 
-        // Zapisz `default_value` w dokumencie użytkownika
+// Save `default_value` in the user document
         await userDoc.update({'default_value': defaultValue});
-        print(
-            "Zaktualizowano default_value dla użytkownika ${user.uid}: $defaultValue");
+        // print(
+        //     "Zaktualizowano default_value dla użytkownika ${user.uid}: $defaultValue");
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Inwestycja dodana pomyślnie!")),
       );
 
+// Reset the form fields
       setState(() {
         _selectedAsset = null;
         _selectedExchange = null;
+        _selectedCryptoImage = null; // Reset cryptocurrency image
+        _selectedExchangeImage = null; // Reset exchange image
         _priceController.clear();
         _amountController.clear();
-        _cryptoController.clear();
+        _cryptoController.clear(); // Reset cryptocurrency controller
+        _exchangeController.clear(); // Reset exchange controller
         _selectedDate = null;
       });
     } catch (e) {
@@ -201,7 +209,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     try {
       double totalValue = 0.0;
 
-      // Pobierz inwestycje z Firestore
+// Fetch investments from Firestore
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)
@@ -216,13 +224,13 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
         totalValue += price * amount;
       }
 
-      // Zapisz `totalValue` jako `default_value`
+      // save `totalValue` as `default_value`
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'default_value': totalValue,
       });
 
-      print(
-          "Zaktualizowano default_value dla użytkownika $userId: $totalValue");
+      // print(
+      //     "Zaktualizowano default_value dla użytkownika $userId: $totalValue");
     } catch (e) {
       print("Błąd podczas aktualizacji default_value: $e");
     }
@@ -233,6 +241,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dodaj Inwestycję'),
+        backgroundColor: Colors.lightBlue,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -251,8 +260,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     SizedBox(height: 5),
                     _buildExchangeSearchField(),
                     SizedBox(height: 20),
-                    Text('Podaj ilość:',
-                        style: TextStyle(fontSize: 16)), // Zamieniono kolejność
+                    Text('Podaj ilość:', style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
                     _buildAmountField(),
                     SizedBox(height: 20),
@@ -260,33 +268,43 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     SizedBox(height: 5),
                     _buildPriceFieldWithToolbar(),
                     SizedBox(height: 20),
-                    // Text('Wybierz date inwestycji: ',
-                    //     style: TextStyle(fontSize: 16)),
                     SizedBox(height: 5),
                     _buildDatePickerField(),
                     SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _addInvestmentToFirestore,
-                      child: Text("Dodaj inwestycję do portfela"),
-                    ),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                            vertical: 16.0, horizontal: 24.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30.0),
+                        ),
+                        backgroundColor: Colors.lightBlue,
+                        elevation: 5,
+                        shadowColor: Colors.black54,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, color: Colors.deepOrange[300]),
+                          SizedBox(width: 8),
+                          Text(
+                            "Dodaj inwestycję do portfela",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.deepOrange[300],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
             ),
     );
   }
-
-  // Widget _buildPriceField() {
-  //   return TextField(
-  //     controller: _priceController,
-  //     keyboardType: TextInputType.numberWithOptions(decimal: true),
-  //     decoration: InputDecoration(
-  //       labelText: 'Podaj cenę zakupu',
-  //       border: OutlineInputBorder(),
-  //       prefixIcon: Icon(Icons.attach_money),
-  //     ),
-  //   );
-  // }
 
   Widget _buildAmountField() {
     return TextField(
@@ -300,7 +318,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     );
   }
 
-  /// Pole TypeAhead dla kryptowalut
+  /// TypeAhead field for cryptocurrencies
   Widget _buildCryptoSearchField() {
     return TextField(
       controller: _cryptoController,
@@ -347,10 +365,9 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       builder: (context, modalSetState) {
         return SafeArea(
           child: FractionallySizedBox(
-            heightFactor: 0.8, // Modal zajmuje 80% wysokości ekranu
+            heightFactor: 0.8,
             child: Column(
               children: [
-                // Pasek wyszukiwania
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: TextField(
@@ -372,7 +389,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     },
                   ),
                 ),
-                // Lista wyników kryptowalut
+// List of cryptocurrency results
                 Expanded(
                   child: SingleChildScrollView(
                     child: filteredAssets.isEmpty
@@ -419,7 +436,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
     );
   }
 
-  /// Pole TypeAhead dla giełd
+  /// TypeAhead field for exchanges
   Widget _buildExchangeSearchField() {
     return TextField(
       controller: _exchangeController,
@@ -466,10 +483,9 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
       builder: (context, modalSetState) {
         return SafeArea(
           child: FractionallySizedBox(
-            heightFactor: 0.8, // Modal zajmuje 80% wysokości ekranu
+            heightFactor: 0.8,
             child: Column(
               children: [
-                // Pasek wyszukiwania
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: TextField(
@@ -489,7 +505,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                     },
                   ),
                 ),
-                // Lista wyników giełd
+// List of exchange results
                 Expanded(
                   child: SingleChildScrollView(
                     child: filteredExchanges.isEmpty
@@ -554,15 +570,22 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
                 'USD',
                 style: TextStyle(color: Colors.grey),
               ),
-            ), // Dodano jako widget 'suffix'
+            ),
           ),
+          onChanged: (value) {
+// Replace comma with a dot
+            String updatedValue = value.replaceAll(',', '.');
+// Validate number input
+            if ('.'.allMatches(updatedValue).length > 1) {
+              updatedValue = updatedValue.substring(0, updatedValue.length - 1);
+            }
+
+            _priceController.text = updatedValue;
+            _priceController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _priceController.text.length),
+            );
+          },
         ),
-        // CupertinoButton(
-        //   child: Text("Gotowe"),
-        //   onPressed: () {
-        //     FocusScope.of(context).unfocus(); // Schowanie klawiatury
-        //   },
-        // ),
       ],
     );
   }
@@ -574,7 +597,7 @@ class _AddInvestmentPageState extends State<AddInvestmentPage> {
           child: Text(
             _selectedDate != null
                 ? 'Wybrana data: ${_selectedDate!.day}-${_selectedDate!.month}-${_selectedDate!.year}'
-                : 'Wybierz datę inwestycji',
+                : 'Wybierz datę inwestycji:',
             style: TextStyle(fontSize: 16),
           ),
         ),

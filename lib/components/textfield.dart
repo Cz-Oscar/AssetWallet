@@ -24,7 +24,6 @@ class MyTextField extends StatelessWidget {
               borderSide: BorderSide(color: Colors.black87),
             ),
             focusedBorder: OutlineInputBorder(
-                // when user click textfield textfield has different color
                 borderSide: BorderSide(
                   color: Colors.deepOrange.shade300,
                   width: 3,

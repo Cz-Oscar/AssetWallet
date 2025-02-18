@@ -6,16 +6,36 @@ Future<void> checkPortfolioChange(String userId) async {
       await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
   if (userDoc.exists) {
+    // print("Sprawdzam significant_change dla użytkownika $userId");
+
     final data = userDoc.data();
-    if (data?['significant_change'] == true) {
-      // Wyślij powiadomienie
+    final bool significantChange = data?['significant_change'] ?? false;
+    final double changePercent = (data?['change_percent'] ?? 0.0)
+        .toDouble(); // get `change_percent` from Firebase
+
+    // print("change_percent z Firebase: $changePercent");
+
+    if (significantChange) {
+      String message;
+
+      if (changePercent > 0) {
+        message =
+            "Twoje portfolio wzrosło o ${changePercent.toStringAsFixed(2)}%!🥳";
+      } else {
+        message =
+            "Twoje portfolio spadło o ${changePercent.abs().toStringAsFixed(2)}%!😞";
+      }
+
+      // print("Wiadomość powiadomienia: $message");
+
+      // send notification
       await FlutterLocalNotificationsPlugin().show(
-        0, // ID powiadomienia
+        0, // notification ID
         'Zmiana w portfolio!',
-        'Wartość Twojego portfolio zmieniła się o ponad 5%!',
+        message,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            'channel_id', // Unikalny identyfikator kanału
+            'channel_id', // unique canal id
             'Zmiany portfolio',
             importance: Importance.high,
           ),
@@ -23,7 +43,7 @@ Future<void> checkPortfolioChange(String userId) async {
         ),
       );
 
-      // Zresetuj flagę `significant_change`
+      // reset 'significant_change'
       await FirebaseFirestore.instance
           .collection('users')
           .doc(userId)

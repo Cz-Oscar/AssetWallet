@@ -4,11 +4,11 @@ import 'firebase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ApiService {
-  // Base URL dla API
+  // Base URL for API
   final String baseUrl = 'https://api.coingecko.com/api/v3';
   Map<String, String>? _symbolToIdMap;
 
-  // Mapowanie symbolu kryptowaluty na ID z CoinGecko
+// Mapping cryptocurrency symbol to CoinGecko ID
   Future<Map<String, String>> fetchCryptoSymbolToIdMap() async {
     if (_symbolToIdMap != null) {
       return _symbolToIdMap!;
@@ -19,7 +19,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List<dynamic>;
 
-        // Tworzenie mapy symbol → ID
+// Creating a symbol → ID map
         final Map<String, String> symbolToIdMap = {};
         for (var item in data) {
           final symbol = item['symbol']?.toLowerCase() ?? '';
@@ -30,10 +30,6 @@ class ApiService {
             symbolToIdMap['$symbol|$name'] = id;
           }
         }
-
-        // Debug: Sprawdź pierwsze 10 wpisów
-        print(
-            "Mapa symbol → ID (pierwsze 10): ${symbolToIdMap.entries.take(10)}");
         return symbolToIdMap;
       } else {
         throw Exception("API zwróciło błąd: ${response.statusCode}");
@@ -44,22 +40,20 @@ class ApiService {
     }
   }
 
-  // Pobieranie aktualnej ceny dla kryptowaluty
+  // actual crypto price
   Future<Map<String, double>> getCurrentPrices(List<String> ids) async {
-    print("Zapytanie getCurrentPrices dla ID: $ids");
+    // print("Zapytanie getCurrentPrices dla ID: $ids");
     try {
-      final joinedIds =
-          ids.where((id) => id.isNotEmpty).join(','); // Tylko poprawne ID
-      print("Wysyłanie zapytania dla ID: $joinedIds");
+      final joinedIds = ids.where((id) => id.isNotEmpty).join(',');
+      // print("Wysyłanie zapytania dla ID: $joinedIds");
 
       final response = await http.get(Uri.parse(
           'https://api.coingecko.com/api/v3/simple/price?ids=$joinedIds&vs_currencies=usd'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        print("Otrzymane dane cenowe: $data");
+        // print("Otrzymane dane cenowe: $data");
 
-        // Mapowanie {id: cena}
         final Map<String, double> prices = {};
         data.forEach((key, value) {
           if (value['usd'] != null) {
@@ -83,22 +77,21 @@ class ApiService {
     final Map<String, List<double>> historicalPrices = {};
 
     for (final id in ids) {
-      // Sprawdź Firebase
+      // check Firebase
       final cachedPrices = await getHistoricalPricesFromFirebase(userId, id);
       if (cachedPrices != null) {
         historicalPrices[id] = cachedPrices;
         continue;
       }
 
-      // Jeśli brak danych w Firebase, pobierz z API
+      // if firebase is empty get from API
       final apiData = await getHistoricalPrices([id], days);
       if (apiData.containsKey(id)) {
         historicalPrices[id] = apiData[id]!;
-        // Zapisz do Firebase
+        // save to Firebase
         await saveHistoricalPricesToFirebase(userId, id, apiData[id]!);
       }
     }
-
     return historicalPrices;
   }
 
@@ -115,7 +108,7 @@ class ApiService {
           final data = json.decode(response.body);
           final prices = data['prices'] as List<dynamic>;
 
-          // Mapuj ceny na listę z datami
+// Map prices to a list with dates
           final List<Map<DateTime, double>> dailyPrices = prices.map((entry) {
             final timestamp = entry[0] as int;
             final price = entry[1] as double;
@@ -123,22 +116,22 @@ class ApiService {
             return {date: price};
           }).toList();
 
-          // Wybierz ostatnią cenę każdego dnia (grupowanie po dniu)
+// Select the last price of each day (grouping by day)
           final Map<String, double> groupedPrices = {};
           for (var entry in dailyPrices) {
             final date = entry.keys.first;
             final price = entry.values.first;
 
-            // Klucz to tylko data w formacie YYYY-MM-DD
+// The key is only the date in YYYY-MM-DD format
             final dateString = "${date.year}-${date.month}-${date.day}";
             groupedPrices[dateString] = price;
           }
 
-          // Konwertuj zmapowane ceny na listę (sortowana według daty)
+// Convert mapped prices to a list (sorted by date)
           final sortedPrices = groupedPrices.entries.toList()
             ..sort((a, b) => a.key.compareTo(b.key));
 
-          // Wybierz tylko ostatnie `days` ceny
+// Select only the last `days` prices
           historicalPrices[id] =
               sortedPrices.map((entry) => entry.value).take(days).toList();
         } else {
@@ -168,7 +161,7 @@ class ApiService {
         // print("Pobrano historyczne dane dla $id z Firebase: $prices");
         return prices;
       } else {
-        print("Brak danych historycznych dla $id w Firebase");
+        // print("Brak danych historycznych dla $id w Firebase");
         return null;
       }
     } catch (e) {
@@ -189,26 +182,24 @@ class ApiService {
         'prices': prices,
         'lastUpdated': DateTime.now().toIso8601String(),
       });
-      print("Zapisano historyczne dane dla $id do Firebase");
+      // print("Zapisano historyczne dane dla $id do Firebase");
     } catch (e) {
       print("Błąd podczas zapisywania danych historycznych dla $id: $e");
     }
   }
 
-  // Pobieranie danych o kryptowalutach z backendu
+  //get data from backend
   Future<List<Map<String, dynamic>>> getAssetsWithLogos() async {
     final firebaseService = FirebaseService();
 
-    // Spróbuj pobrać dane z Firebase
     final cachedAssets =
         await firebaseService.getFromFirebase('cryptocurrencies');
     if (cachedAssets.isNotEmpty) {
-      print("Pobrano kryptowaluty z Firebase");
+      // print("Pobrano kryptowaluty z Firebase");
       return cachedAssets;
     }
 
-    // Jeśli brak danych w Firebase, pobierz z API
-    print("Pobieram kryptowaluty z API");
+    // print("Pobieram kryptowaluty z API");
     final url = Uri.parse("http://127.0.0.1:8000/api/get-assets/");
     try {
       final response = await http.get(url);
@@ -224,7 +215,6 @@ class ApiService {
           final key = '$symbol|$name';
           final id = symbolToIdMap[key] ?? 'unknown';
 
-          // Debug: Sprawdź symbol, nazwę i wynik mapowania
           if (id == 'unknown') {
             print(
                 "Nie znaleziono ID dla: Symbol: $symbol, Nazwa: $name, Klucz: $key");
@@ -238,7 +228,7 @@ class ApiService {
           };
         }).toList();
 
-        // Zapisz do Firebase
+        // save to Firebase
         await firebaseService.saveToFirebase('cryptocurrencies', allAssets);
         return allAssets;
       } else {
@@ -251,7 +241,7 @@ class ApiService {
     }
   }
 
-// Pomocnicza funkcja: Pobierz mapę symbol → id z CoinGecko
+// Helper function: Retrieve the symbol → ID map from CoinGecko
   Future<Map<String, String>> fetchSymbolToIdMap() async {
     try {
       final response = await http
@@ -260,7 +250,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
-        // Mapuj symbol → id
+// Map symbol → ID
         return {
           for (var item in data)
             if (item['symbol'] != null && item['id'] != null)
@@ -275,19 +265,19 @@ class ApiService {
     }
   }
 
-  // Pobieranie danych o giełdach z backendu
+// Fetching exchange data from the backend
   Future<List<Map<String, dynamic>>> getExchanges() async {
     final firebaseService = FirebaseService();
 
-    // Spróbuj pobrać dane z Firebase
+// Try to fetch data from Firebase
     final cachedExchanges = await firebaseService.getFromFirebase('exchanges');
     if (cachedExchanges.isNotEmpty) {
-      print("Pobrano giełdy z Firebase");
+      // print("Pobrano giełdy z Firebase");
       return cachedExchanges;
     }
 
-    // Jeśli brak danych w Firebase, pobierz z API
-    print("Pobieram giełdy z API");
+    // if not in firebase get from API
+    // print("Pobieram giełdy z API");
     final url = Uri.parse("http://127.0.0.1:8000/api/get-exchanges/");
     try {
       final response = await http.get(url);
@@ -302,7 +292,6 @@ class ApiService {
           };
         }).toList();
 
-        // Zapisz do Firebase
         await firebaseService.saveToFirebase('exchanges', exchanges);
         return exchanges;
       } else {

@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_asset_wallet/pages/home_page.dart';
 import 'package:flutter_asset_wallet/pages/login_or_register_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,11 +15,14 @@ Future<void> initializeNotifications() async {
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  final DarwinInitializationSettings initializationSettingsIOS =
-      DarwinInitializationSettings();
+  const DarwinInitializationSettings initializationSettingsIOS =
+      DarwinInitializationSettings(
+    requestAlertPermission: true,
+    requestBadgePermission: true,
+    requestSoundPermission: true,
+  );
 
   final InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
     iOS: initializationSettingsIOS,
   );
 
@@ -32,13 +36,20 @@ Future<void> initializeNotifications() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inicjalizacja Firebase
-  await initializeNotifications();
+  await Firebase.initializeApp();
+  await initializeNotifications(); // Initialize notifications
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode
+      .immersiveSticky); // Remove the status bar with battery and time for screenshots
+
   runApp(const MyApp());
 }
 
 void startNotificationCheck(String userId) {
-  Timer.periodic(const Duration(minutes: 5), (timer) {
+  // print("Rozpoczęto sprawdzanie powiadomień dla użytkownika $userId");
+
+  Timer.periodic(const Duration(seconds: 70), (timer) {
+    // print("Sprawdzanie powiadomień dla $userId...");
+
     checkPortfolioChange(userId);
   });
 }
@@ -64,6 +75,7 @@ class AuthStateHandler extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
+          startNotificationCheck(snapshot.data!.uid); // Restart the function
           return HomePage();
         } else {
           return const LoginOrRegisterPage();

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_asset_wallet/components/button.dart';
 import 'package:flutter_asset_wallet/components/square_box.dart';
@@ -19,11 +20,11 @@ class _LoginPageState extends State<LoginPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Stałe dla odstępów
-  final double iconTopPadding = 10.0; // Odstęp na górze dla ikonki
-  final double iconSize = 70.0; // Rozmiar ikonki kłódki
-  final double titlePadding = 40.0; // Odstęp pod ikonką dla napisu
-  final double formStartPadding = 50.0; // Odstęp od tytułu do pól tekstowych
+
+  final double iconTopPadding = 10.0; 
+  final double iconSize = 70.0; 
+  final double titlePadding = 40.0; 
+  final double formStartPadding = 50.0; 
 
   // bold white style for register and forgot password?
   final TextStyle boldTextStyle = TextStyle(
@@ -32,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     fontWeight: FontWeight.bold,
   );
 
-  // black style for rest
+  // black style for the rest
   final TextStyle blackTextStyle = TextStyle(
     color: Colors.black,
     fontSize: 15,
@@ -57,11 +58,22 @@ class _LoginPageState extends State<LoginPage> {
     // try login
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // user login
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      final userId = userCredential.user?.uid;
+      if (userId != null) {
+        // updating lastActiveAt
+        FirebaseFirestore.instance.collection('users').doc(userId).update({
+          'lastActiveAt': FieldValue.serverTimestamp(),
+        }).catchError((error) {
+          print("Błąd aktualizacji lastActiveAt: $error");
+        });
+      }
       // Close loading dialog on success
       if (mounted) Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
@@ -102,10 +114,9 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: iconTopPadding), // odstep na gorze
-                Icon(Icons.lock, size: iconSize), // Ikona
-                // SizedBox(height: iconSize), // ikona
-                SizedBox(height: titlePadding), // odstep pod ikona
+                SizedBox(height: iconTopPadding), 
+                Icon(Icons.lock, size: iconSize),
+                SizedBox(height: titlePadding),
                 // Welcome message
                 const Text(
                   'Welcome back!',
@@ -115,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 SizedBox(
-                  height: formStartPadding, // odstep od pol tekstowych
+                  height: formStartPadding,
                 ),
 
                 // Username or email field
@@ -207,17 +218,13 @@ class _LoginPageState extends State<LoginPage> {
                   height: 30,
                 ),
 
-                // Google and Apple buttons
+                // Google and button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SquareBox(
                         onTap: () => AuthService().signInWithGoogle(),
                         imagePath: 'lib/images/google_logo.png'),
-                    SizedBox(width: 35),
-                    SquareBox(
-                        onTap: () => AuthService().signInWithGoogle(),
-                        imagePath: 'lib/images/apple_logo.png'),
                   ],
                 ),
                 const SizedBox(

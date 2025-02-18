@@ -1,7 +1,7 @@
 class PortfolioData {
   final DateTime date;
-  final double userValue; // Wartość użytkownika
-  final double marketValue; // Wartość rynkowa
+  final double userValue; // user value
+  final double marketValue; // market value
 
   PortfolioData(this.date, this.userValue, this.marketValue);
 

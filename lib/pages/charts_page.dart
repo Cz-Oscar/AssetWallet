@@ -6,7 +6,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChartsPage extends StatefulWidget {
-  const ChartsPage({Key? key}) : super(key: key);
+  final double totalPortfolioValue;
+  final double currentPortfolioValue;
+  const ChartsPage({
+    Key? key,
+    required this.totalPortfolioValue,
+    required this.currentPortfolioValue,
+  }) : super(key: key);
 
   @override
   State<ChartsPage> createState() => _ChartsPageState();
@@ -23,6 +29,9 @@ class _ChartsPageState extends State<ChartsPage> {
   }
 
   Future<void> _fetchChartData() async {
+    // print(
+    //     "📊 Otrzymane wartości w ChartsPage: total=${widget.totalPortfolioValue}, current=${widget.currentPortfolioValue}");
+
     setState(() => isLoading = true);
 
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -44,38 +53,62 @@ class _ChartsPageState extends State<ChartsPage> {
           .cast<String>()
           .toList();
 
+      // download historical prices
       final historicalPrices =
           await ApiService().getHistoricalPricesWithFirebase(uid, ids, 7);
 
-      List<PortfolioData> tempChartData = [];
-      for (int i = 0; i < 7; i++) {
+      // download actual cryptocurrency
+      final prices = await ApiService().getCurrentPrices(ids);
+      // print("🔥 Aktualne ceny w charts_page: $prices");
+
+      // fill chart
+      chartData.clear();
+      for (int i = 0; i < 6; i++) {
+        DateTime dateForDay = DateTime.now().subtract(Duration(days: 6 - i));
+
         double dailyUserValue = 0.0;
         double dailyMarketValue = 0.0;
 
-        final dateForDay = DateTime.now().subtract(Duration(days: 6 - i));
         for (var doc in snapshot.docs) {
           final data = doc.data() as Map<String, dynamic>;
-          final amount = (data['amount'] ?? 0.0).toDouble();
-          final price = (data['price'] ?? 0.0).toDouble();
-          final id = data['id'] ?? '';
+          double price = (data['price'] ?? 0.0).toDouble();
+          double amount = (data['amount'] ?? 0.0).toDouble();
+          String id = data['id'] ?? '';
 
-          final purchaseDate = (data['date'] as Timestamp).toDate();
+          DateTime purchaseDate = (data['date'] as Timestamp).toDate();
           if (purchaseDate.isAfter(dateForDay)) continue;
 
           dailyUserValue += price * amount;
 
-          if (historicalPrices.containsKey(id)) {
+          if (historicalPrices.containsKey(id) &&
+              historicalPrices[id] != null) {
             final marketPrice = historicalPrices[id]?[i] ?? 0.0;
             dailyMarketValue += marketPrice * amount;
           }
         }
 
-        tempChartData
+        chartData
             .add(PortfolioData(dateForDay, dailyUserValue, dailyMarketValue));
+      }
+      DateTime today = DateTime.now();
+      double todayUserValue = widget.totalPortfolioValue;
+      double todayMarketValue = widget.currentPortfolioValue;
+
+      chartData.removeWhere((data) =>
+          data.date.day == DateTime.now().day &&
+          data.date.month == DateTime.now().month &&
+          data.date.year == DateTime.now().year);
+
+      // add today's date
+      chartData.add(PortfolioData(today, todayUserValue, todayMarketValue));
+
+      // print("🔥 Poprawione dane wykresu (ostatni dzień): ${chartData.last}");
+      // print("📅 Daty w chartData:");
+      for (var data in chartData) {
+        print("${data.date}");
       }
 
       setState(() {
-        chartData = tempChartData;
         isLoading = false;
       });
     } catch (e) {
@@ -87,7 +120,10 @@ class _ChartsPageState extends State<ChartsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Charts')),
+      appBar: AppBar(
+        title: const Text('Wykres'),
+        backgroundColor: Colors.lightBlue,
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -107,10 +143,15 @@ class _ChartsPageState extends State<ChartsPage> {
                           Container(
                             width: 10,
                             height: 10,
-                            color: Colors.blue,
+                            color: Colors.blueGrey,
                           ),
                           const SizedBox(width: 5),
-                          const Text('Wartość użytkownika'),
+                          const Text(
+                            'Wartość inwestycji',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(width: 20),
@@ -119,10 +160,15 @@ class _ChartsPageState extends State<ChartsPage> {
                           Container(
                             width: 10,
                             height: 10,
-                            color: Colors.green,
+                            color: Colors.deepOrange[300],
                           ),
                           const SizedBox(width: 5),
-                          const Text('Wartość rynkowa'),
+                          const Text(
+                            'Obecna Wartość',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                     ],

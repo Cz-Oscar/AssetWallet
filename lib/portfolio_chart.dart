@@ -9,7 +9,16 @@ class PortfolioChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pobierz minimalną i maksymalną wartość w danych
+    if (chartData.isEmpty) {
+      return Center(
+        child: Text(
+          'Obecnie nie masz żadnych inwestycji. Dodaj pierwszą!',
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      );
+    }
+
+// Retrieve the minimum and maximum value in the data
     final minValue = chartData
         .map((data) => data.userValue)
         .followedBy(chartData.map((data) => data.marketValue))
@@ -20,27 +29,23 @@ class PortfolioChart extends StatelessWidget {
         .followedBy(chartData.map((data) => data.marketValue))
         .reduce((a, b) => a > b ? a : b);
 
-    // Oblicz zakres danych
+// Calculate the dynamic value range and adjust the interval
     final range = maxValue - minValue;
-
-    // Dynamiczne wartości dla osi Y
-    final minY = (minValue - range * 0.1).clamp(0.0, double.infinity);
-    final maxY = maxValue + range * 0.1;
-
-    // Odstęp osi Y
-    final interval = ((maxY - minY) / 4).ceilToDouble();
+    final adjustedMinY = (minValue - range * 0.1).floorToDouble();
+    final adjustedMaxY = (maxValue + range * 0.1).ceilToDouble();
+    final interval = ((adjustedMaxY - adjustedMinY) / 5).ceilToDouble();
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.5,
       child: LineChart(
         LineChartData(
-          backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+          backgroundColor: Colors.white,
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
               axisNameWidget: const Text(
-                'Portfolio Value [\$]',
+                'Wartość portfela [\$]',
                 style: TextStyle(
-                  color: Color.fromARGB(255, 0, 0, 0),
+                  color: Colors.black,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
@@ -49,39 +54,47 @@ class PortfolioChart extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 50,
+                interval: interval,
                 getTitlesWidget: (value, meta) {
+                  if (value == adjustedMinY || value == adjustedMaxY) {
+                    return Container();
+                  }
                   return Text(
                     '\$${value.toStringAsFixed(0)}',
                     style: const TextStyle(
-                        fontSize: 12, color: Color.fromARGB(255, 0, 0, 0)),
-                    textAlign: TextAlign.center,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   );
                 },
               ),
             ),
             bottomTitles: AxisTitles(
               axisNameWidget: const Text(
-                'Date',
+                'Data zakupu',
                 style: TextStyle(
-                    color: Color.fromARGB(255, 0, 0, 0),
+                    color: Colors.black,
                     fontSize: 14,
                     fontWeight: FontWeight.bold),
               ),
               axisNameSize: 20,
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 30,
+                reservedSize: 35,
                 getTitlesWidget: (value, meta) {
-                  final index = value.toInt();
-                  if (index >= 0 && index < chartData.length) {
-                    final date = chartData[index].date;
-                    return Text(
-                      '${date.day}/${date.month}',
-                      style: const TextStyle(
-                          fontSize: 12, color: Color.fromARGB(255, 0, 0, 0)),
-                    );
-                  }
-                  return const Text('');
+                  if (value < 0 || value >= chartData.length)
+                    return Container();
+
+// Retrieve unique dates as X-axis indices
+                  final DateTime date = chartData[value.toInt()].date;
+                  String formattedDate = '${date.day}/${date.month}';
+
+                  return Text(
+                    formattedDate,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                  );
                 },
               ),
             ),
@@ -94,13 +107,12 @@ class PortfolioChart extends StatelessWidget {
           ),
           gridData: FlGridData(
             show: true,
-            // Siatka wyłączona
+            horizontalInterval:
+                interval, // Dynamic grid adjusted to the interval
           ),
           borderData: FlBorderData(
             show: true,
-            border: Border.all(
-                color: const Color.fromARGB(255, 224, 113, 3).withOpacity(0.5),
-                width: 2),
+            border: Border.all(color: Colors.deepOrange, width: 2),
           ),
           lineBarsData: [
             LineChartBarData(
@@ -114,19 +126,12 @@ class PortfolioChart extends StatelessWidget {
                   .toList(),
               isCurved: false,
               gradient: const LinearGradient(
-                colors: [Colors.blue, Colors.blueAccent],
+                colors: [Colors.blueGrey, Colors.blueGrey],
               ),
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: false,
-                gradient: LinearGradient(
-                  colors: [Colors.blue.withOpacity(0.3), Colors.transparent],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
+              belowBarData: BarAreaData(show: false),
             ),
             LineChartBarData(
               spots: chartData
@@ -138,45 +143,33 @@ class PortfolioChart extends StatelessWidget {
                       ))
                   .toList(),
               isCurved: false,
-              gradient: const LinearGradient(
-                colors: [Colors.green, Colors.lightGreen],
+              gradient: LinearGradient(
+                colors: [Colors.deepOrange[300]!, Colors.deepOrange[300]!],
               ),
               barWidth: 3,
               isStrokeCapRound: true,
               dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: false,
-                gradient: LinearGradient(
-                  colors: [Colors.green.withOpacity(0.3), Colors.transparent],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
+              belowBarData: BarAreaData(show: false),
             ),
           ],
           minX: 0,
           maxX: (chartData.length - 1).toDouble(),
-          minY: minY,
-          maxY: maxY,
+          minY: adjustedMinY, // Dynamic range
+          maxY: adjustedMaxY, // Dynamic range
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              tooltipPadding:
-                  const EdgeInsets.all(8), // Padding wewnątrz tooltipa
-              tooltipMargin: 10, // Odległość tooltipa od punktu
+              tooltipPadding: const EdgeInsets.all(8),
+              tooltipMargin: 10,
               getTooltipItems: (touchedSpots) {
-                // Lista wszystkich punktów dotkniętych, więc dla każdego punktu tworzymy tooltip
                 return touchedSpots.map((spot) {
-                  // Pobieramy datę z chartData
                   final index = spot.x.toInt();
                   final date = chartData[index].date;
                   final formattedDate =
-                      '${date.day}/${date.month}/${date.year}'; // Formatujemy datę
-
-                  // Rozróżniamy, która linia to 'User Value', a która to 'Market Value'
+                      '${date.day}/${date.month}/${date.year}';
                   final isUserValue = spot.barIndex == 0;
 
                   return LineTooltipItem(
-                    '$formattedDate\n${spot.y.toStringAsFixed(2)}', // Data i wartość Y
+                    '$formattedDate\n${spot.y.toStringAsFixed(2)}',
                     const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -184,7 +177,9 @@ class PortfolioChart extends StatelessWidget {
                     ),
                     children: [
                       TextSpan(
-                        text: isUserValue ? '\nUser Value' : '\nMarket Value',
+                        text: isUserValue
+                            ? '\nWartość inwestycji'
+                            : '\nObecna Wartość',
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 10),
                       ),
@@ -193,7 +188,7 @@ class PortfolioChart extends StatelessWidget {
                 }).toList();
               },
             ),
-            handleBuiltInTouches: true, // Włączenie dotyku na wykresie
+            handleBuiltInTouches: true,
           ),
         ),
       ),
