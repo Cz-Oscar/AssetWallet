@@ -71,7 +71,7 @@ The project was built using the following technologies:
 git clone https://github.com/Cz-Oscar/AssetWallet.git
 cd AssetWallet
 ```
-###2️⃣ Install dependencies
+### 2️⃣ **Install dependencies**
 📱 Flutter
 ```sh
 flutter pub get
@@ -81,7 +81,7 @@ flutter pub get
 cd crypto_backend
 pip install -r requirements.txt
 ```
-3️⃣ Run the application
+### 3️⃣ **Run the application**
 📱 Flutter
 ```
 flutter run
